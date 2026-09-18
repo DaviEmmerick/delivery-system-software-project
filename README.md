@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Davi França Emmerick de Souza | Dominio / entidades / regras de negócio | Estrutura do domínio, entidades e validações |
 | Leandro Machado | Infraestrutura / ambiente | Configuração do projeto e suporte ao repositório |
-| JoaoGAzevedo | Modelagem / domínio | Apoio à definição das entidades e regras iniciais |
+| João Gabriel de Azevedo | Modelagem / domínio | Apoio à definição das entidades e regras iniciais |
 
 ## Visão geral
 
