@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Construir um sistema de delivery eficiente para facilitar pedidos, entregas e a gestão por parte do cliente em si. Muitos deliverys ainda são realizados de forma manual via whatsapp ou aplicativos semelhantes.
+Construir um sistema de delivery eficiente para facilitar pedidos, entregas e o acompanhamento do atendimento, reduzindo o uso de processos manuais e melhorando o fluxo entre cliente, restaurante e entregador.
 
 ## Público-alvo
 - Clientes que desejam realizar pedidos de forma rápida e prática
@@ -18,6 +18,23 @@ Construir um sistema de delivery eficiente para facilitar pedidos, entregas e a 
 - Endereço
 - Restaurante
 
+## Agregados previstos
+
+### 1. Agregado Cliente
+- Raiz: Cliente
+- Entidades/objetos de valor: Cliente, Endereço
+- Regras: cliente deve ter nome e telefone válidos; endereço deve ter rua e número
+
+### 2. Agregado Pedido
+- Raiz: Pedido
+- Entidades/objetos de valor: Pedido, Produto, Entrega
+- Regras: pedido deve conter ao menos um item; o total deve ser calculado a partir dos itens; entrega deve refletir o status do pedido
+
+### 3. Agregado Restaurante
+- Raiz: Restaurante
+- Entidades/objetos de valor: Restaurante
+- Regras: restaurante deve possuir nome válido e atuar como ponto de origem do pedido
+
 ## Funcionalidades previstas
 - Cadastro de clientes
 - Gestão de produtos e categorias
@@ -27,14 +44,13 @@ Construir um sistema de delivery eficiente para facilitar pedidos, entregas e a 
 - Histórico de pedidos
 - Dashboard administrativo
 
-
 ## Integrantes
 - Leandro Machado — GitHub: @LeandroMachadoCC
 - Davi França Emmerick de Souza — GitHub: @DaviEmmerick
-- JoaoGAzevedo — GitHub: @JoaoGAzevedo
+- Joao Gabriel Azevedo — GitHub: @JoaoGAzevedo
 
-## Divisão de responsabilidades (Podemos alterar ao longo do projeto, será documentado em decisions.md)
-- Leandro Alves: infraestrutura e ambiente do projeto
-- Davi França Emmerick de Souza: backend e arquitetura da aplicação
-- JoaoGAzevedo : modelagem de dados e backend
-- Todos: testes, integração e revisão final do produto
+## Divisão inicial de responsabilidades
+- Leandro Machado: infraestrutura, ambiente e backend
+- Davi França Emmerick de Souza: arquitetura, entidades e regras de negócio
+- JoaoGAzevedo: modelagem de dados, validações e apoio na integração do backend
+- Todos: testes, revisão final e ajustes de integração
