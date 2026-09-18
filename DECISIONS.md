@@ -21,3 +21,7 @@
 - `37640ce` — [Docs] Responsabilidades iniciais
 - `16b587c` — [Docs] Ideia inicial do projeto - sem definir as decisões técnicas ainda
 - `af33cf0` — [Feat] Estrutura base do projeto - Sistema de Delivery
+
+#### Uso de IA
+- Usei IA como apoio para fazer brainstorming inicial sobre o domínio do projeto, gerando ideias e levantando possibilidades de entidades e agregados.
+- Também usei IA para revisar a documentação final e ajustar a redação das decisões do projeto, sem substituir a implementação ou a decisão final do grupo.
