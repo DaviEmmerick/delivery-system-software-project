@@ -7,8 +7,16 @@ Construir um sistema de delivery eficiente para facilitar pedidos, entregas e a 
 ## Público-alvo
 - Clientes que desejam realizar pedidos de forma rápida e prática
 - Restaurantes e estabelecimentos que precisam organizar o atendimento
-- Entregadores que precisam acompanhar pedidos e rotas
-- Administradores que desejam controlar o fluxo do sistema
+- Entregadores que acompanham pedidos e rotas
+- Administradores que controlam o fluxo do sistema
+
+## Entidades iniciais do domínio
+- Cliente
+- Pedido
+- Produto
+- Entrega
+- Endereço
+- Restaurante
 
 ## Funcionalidades previstas
 - Cadastro de clientes
@@ -18,6 +26,7 @@ Construir um sistema de delivery eficiente para facilitar pedidos, entregas e a 
 - Controle de entrega
 - Histórico de pedidos
 - Dashboard administrativo
+
 
 ## Divisão de responsabilidades (Podemos alterar ao longo do projeto, será documentado em decisions.md)
 - Leandro: infraestrutura e ambiente do projeto
