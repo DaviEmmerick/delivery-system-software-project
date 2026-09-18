@@ -8,15 +8,15 @@ on:
 
 jobs:
   test:
-    runs-on: alphine-latest
+    runs-on: ubunto-latest
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Baixar Python 3:14.4
+    - name: Baixar Python 3:12
       uses: actions/setup-python@4
       with:
-        python-version: "3:14.4"
+        python-version: "3:12"
     
     - name: Instalar dependências
       run: |
