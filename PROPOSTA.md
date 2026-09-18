@@ -28,8 +28,13 @@ Construir um sistema de delivery eficiente para facilitar pedidos, entregas e a 
 - Dashboard administrativo
 
 
+## Integrantes
+- Leandro Machado — GitHub: @LeandroMachadoCC
+- Davi França Emmerick de Souza — GitHub: @DaviEmmerick
+- JoaoGAzevedo — GitHub: @JoaoGAzevedo
+
 ## Divisão de responsabilidades (Podemos alterar ao longo do projeto, será documentado em decisions.md)
-- Leandro: infraestrutura e ambiente do projeto
-- Davi: backend e arquitetura da aplicação
-- João: frontend e interface do sistema
+- Leandro Alves: infraestrutura e ambiente do projeto
+- Davi França Emmerick de Souza: backend e arquitetura da aplicação
+- JoaoGAzevedo : modelagem de dados e backend
 - Todos: testes, integração e revisão final do produto
