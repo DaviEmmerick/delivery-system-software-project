@@ -13,6 +13,23 @@
 - Para manter o núcleo do sistema simples, testável e independente de infraestrutura
 - Para garantir que as regras de negócio fiquem centralizadas antes da implementação de serviços e interfaces
 
+#### Arquivos alterados
+
+Arquivos Python:
+- `src/domain/model.py`
+- `src/domain/entities/__init__.py`
+- `src/domain/entities/cliente.py`
+- `src/domain/entities/endereco.py`
+- `src/domain/entities/entrega.py`
+- `src/domain/entities/pedido.py`
+- `src/domain/entities/produto.py`
+- `src/domain/entities/restaurante.py`
+
+Arquivos Markdown:
+- `README.md`
+- `PROPOSTA.md`
+- `DECISIONS.md`
+
 #### Commits relevantes
 - `a063097` — [Feat] Entidades: restaurante, endereço e entrega v0
 - `118b56a` — [Feat] git ignore
