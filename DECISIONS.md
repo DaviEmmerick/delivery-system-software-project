@@ -42,3 +42,39 @@ Arquivos Markdown:
 #### Uso de IA
 - Usei IA como apoio para fazer brainstorming inicial sobre o domínio do projeto, gerando ideias e levantando possibilidades de entidades e agregados.
 - Também usei IA para revisar a documentação final e ajustar a redação das decisões do projeto, sem substituir a implementação ou a decisão final do grupo.
+
+### João Gabriel de Azevedo
+
+#### O que implementei
+- Criação e estruturação da suíte de testes unitários para todas as entidades de domínio (`Cliente`, `Endereco`, `Entrega`, `Pedido`, `Produto` e `Restaurante`)
+- Cobertura completa de casos de sucesso, sanitização de dados (remoção de espaços com `strip`) e validações de regras de negócio com lançamento de exceções (`ValueError`)
+- Configuração e ajuste do ambiente de execução do `pytest` (`pytest.ini` e `tests/pytest.ini`) para permitir execução transparente dos testes a partir da raiz do projeto
+
+#### Por que
+- Para assegurar a integridade e confiabilidade das regras de negócio do núcleo da aplicação
+- Para prevenir regressões e garantir que dados ou comportamentos inválidos sejam devidamente barrados pelas entidades de domínio
+- Para viabilizar feedback rápido e contínuo durante a evolução do sistema
+
+#### Arquivos alterados
+
+Arquivos Python:
+- `tests/unit/test_cliente.py`
+- `tests/unit/test_endereco.py`
+- `tests/unit/test_entrega.py`
+- `tests/unit/test_pedido.py`
+- `tests/unit/test_produto.py`
+- `tests/unit/test_restaurante.py`
+
+Arquivos de Configuração:
+- `pytest.ini`
+- `tests/pytest.ini`
+
+Arquivos Markdown:
+- `DECISIONS.md`
+
+#### Commits relevantes
+- `b87b6fb` — Add: Adicionados testes unitários para as entidades Cliente, Endereco, Entrega, Pedido, Produto e Restaurante
+
+#### Uso de IA
+- Usei IA para auxiliar no planejamento e estruturação dos cenários de testes unitários de cada entidade de domínio.
+- Também utilizei IA para acelerar a implementação do código de testes com pytest, criação de testes parametrizados para casos de borda e validação da suíte.
