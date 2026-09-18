@@ -77,4 +77,4 @@ Arquivos Markdown:
 
 #### Uso de IA
 - Usei IA para auxiliar no planejamento e estruturação dos cenários de testes unitários de cada entidade de domínio.
-- Também utilizei IA para acelerar a implementação do código de testes com pytest, criação de testes parametrizados para casos de borda e validação da suíte.
+- Também usei IA para revisar a documentação final e ajustar a redação das decisões do projeto, sem substituir a implementação ou a decisão final do grupo.
