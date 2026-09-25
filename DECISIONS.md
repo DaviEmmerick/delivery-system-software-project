@@ -78,3 +78,43 @@ Arquivos Markdown:
 #### Uso de IA
 - Usei IA para auxiliar no planejamento e estruturação dos cenários de testes unitários de cada entidade de domínio.
 - Também usei IA para revisar a documentação final e ajustar a redação das decisões do projeto, sem substituir a implementação ou a decisão final do grupo.
+
+
+### Leandro Machado Cardoso da Cunha
+
+#### O que implementei
+- Criei uma workflow de GitHub Actions para executar a suíte de testes em cada push e pull request na branch `main`
+- Configurei a execução em ambiente Ubuntu com Python 3.12
+- Instalei as dependências automaticamente a partir do `requirements.txt`
+- Defini a execução do pytest com o `PYTHONPATH=src` para garantir que os módulos do projeto sejam importados corretamente
+
+#### Por que
+- Para garantir que qualquer alteração na branch principal seja validada automaticamente
+- Para padronizar o ambiente de testes entre desenvolvimento e integração contínua
+- Para reduzir erros de configuração e evitar que código quebrado seja mergeado sem validação
+- Para manter o processo de qualidade com feedback rápido durante o desenvolvimento
+
+#### Arquivos alterados
+
+Arquivos de workflow:
+- `.github/workflows/ci.yml`
+
+Arquivos de configuração:
+- `pytest.ini`
+- `requirements.txt`
+
+Arquivos Markdown:
+- `DECISIONS.md`
+
+#### Commits relevantes
+- `41cd01f` — Feat: Implementando a esteira de testes
+- `5b14a36` — Fix: Corrigindo versão do python e modelo do runner(ubunto)
+- `708246a` — Fix: Corrigindo o nome do runner(ubuntu)
+- `43880e2` — Fix: Corrigindo o uses para a versão 5
+- `3676927` — Fix: Corrigindo o uses para a versão actions/checkout@v4
+- `55b0604` — Fix: Corrigindo o uses para a versão python3.12
+- `04f429a` — Fix: Corrigindo o nome do actions/setup-python@v5
+
+#### Uso de IA
+- Usei IA para ajustar a redação desta decisão de forma clara e objetiva, sem substituir a escolha técnica final do grupo.
+
