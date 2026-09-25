@@ -118,3 +118,34 @@ Arquivos Markdown:
 #### Uso de IA
 - Usei IA para ajustar a redação desta decisão de forma clara e objetiva, sem substituir a escolha técnica final do grupo.
 
+## Parte 2 - decisões da semana 2
+
+### Davi França Emmerick de Souza
+
+#### O que implementei
+- Explicitei a composição do agregado Cliente, permitindo associar um Endereco ao cliente
+- Tornei Endereco imutável e validei sua associação ao Cliente
+- Criei ItemPedido como objeto de valor imutável, com produto, quantidade e subtotal
+- Ajustei Pedido para aceitar Produtos ou ItemPedido, preservar os itens recebidos e calcular o total pelos subtotais
+- Expus ItemPedido pelo módulo `src/domain/model.py`
+- Os testes existentes não foram alterados neste commit; as novas regras ainda precisam de testes unitários específicos
+
+#### Por que
+- Para representar melhor os agregados Cliente e Pedido e proteger suas regras de domínio
+- Para permitir quantidade por produto no pedido e manter o cálculo do total centralizado no domínio
+- Para manter o modelo independente de adapters, service layer e entrypoints
+
+#### Arquivos alterados
+
+Arquivos Python:
+- `src/domain/entities/cliente.py`
+- `src/domain/entities/endereco.py`
+- `src/domain/entities/item_pedido.py`
+- `src/domain/entities/pedido.py`
+- `src/domain/model.py`
+
+#### Commits relevantes
+- `6b53d71` — [Feat] Mudança nos agregados
+
+#### Uso de IA
+- Usei IA para revisar as regras do domínio.
