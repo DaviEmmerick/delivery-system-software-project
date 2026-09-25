@@ -1,9 +1,16 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
 class Endereco:
-    def __init__(self, rua: str, numero: str):
-        if not rua or not rua.strip():
+    rua: str
+    numero: str
+
+    def __post_init__(self):
+        if not self.rua or not self.rua.strip():
             raise ValueError("rua é obrigatória")
-        if not numero or not numero.strip():
+        if not self.numero or not self.numero.strip():
             raise ValueError("número é obrigatório")
 
-        self.rua = rua.strip()
-        self.numero = numero.strip()
+        object.__setattr__(self, "rua", self.rua.strip())
+        object.__setattr__(self, "numero", self.numero.strip())
