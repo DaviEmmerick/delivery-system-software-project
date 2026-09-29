@@ -1,2 +1,21 @@
+# Ambientes virtuais
 venv/
-__pycache__*
+.venv/
+env/
+
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest e testes
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ambientes e variáveis
+.env
+
+# IDEs e editores
+.vscode/
+.idea/
