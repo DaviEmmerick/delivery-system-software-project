@@ -137,27 +137,19 @@ Arquivos Markdown:
 
 - Usei IA para ajustar a redação desta decisão de forma clara e objetiva, sem substituir a escolha técnica final do grupo.
 
-### Victor Antunes dos Santos
+### Victor Antunes dos Santos (@VictorAntunesCastro)
 
 #### O que implementei
 
-- Camada de serviço (`src/service_layer/services.py`) com 9 casos de uso: criar e consultar cliente, criar e listar restaurantes, criar pedido, consultar pedido, listar pedidos do cliente, consultar e atualizar o status da entrega
-- Os serviços passaram a receber os repositórios por parâmetro, sem importar Flask nem SQLAlchemy, e a criar exceções próprias (`NaoEncontrado` e `Conflito`)
-- API Flask (`src/entrypoints/flask_app.py`) montada por uma função `create_app()`, com 8 endpoints e tradução das exceções de serviço em 400, 404 e 409, sempre com corpo JSON
-- Regras que estavam faltando: pedido só é criado para cliente existente, `quantidade` entra no total do pedido, telefone e nome de restaurante duplicados são recusados e o status da entrega só aceita valores conhecidos
-- Testes unitários dos serviços com repositórios fake (`tests/unit/test_services.py`) e testes e2e da API (`tests/e2e/test_api.py`) cobrindo sucesso, 400, 404 e 409
-- Restauração da estrutura dos endpoints da API Flask após corrupção gerada por um conflito de merge
+- Desenvolvimento da camada de serviço completa com 9 casos de uso (criação e consulta de clientes, restaurantes, pedidos e atualização de status de entrega)
+- Implementação da API REST utilizando Flask com 8 endpoints mapeados e orquestração de tratamento de exceções (como `NaoEncontrado` e `Conflito`)
+- Criação da suíte de testes de ponta a ponta (E2E) para validar a API e testes unitários isolados para os serviços
+- _Nota de autoria: Devido a uma configuração local, alguns dos meus commits iniciais foram assinados com o usuário `VictorAntunes7`, mas todos pertencem à minha conta oficial vinculada a este projeto (`@VictorAntunesCastro`)._
 
 #### Por que
 
-- `Pedido.cliente` passou a guardar o id do cliente, porque nome não é único e dois clientes "Ana" misturavam pedidos
-- Injetar os repositórios permite testar as regras dos serviços sem banco e sem HTTP, e prepara a troca por Unit of Work na Fase 2
-- `create_app()` dá a cada teste e2e uma aplicação e um banco novos, então um teste nunca depende do outro
-
-#### Simplificações conscientes
-
-- `Entrega` ainda vive em um dicionário em memória, sem ORM nem repositório, e o status é validado na camada de serviço; o ideal é levar as duas coisas para o domínio e para a persistência
-- `Restaurante` ainda não se liga ao `Pedido`, porque isso exige mudança no modelo de domínio, que é de outro integrante
+- Para garantir que a lógica de orquestração ficasse completamente isolada de frameworks (Flask) e de bancos de dados reais, decidindo injetar as instâncias de repositório como parâmetros nas funções
+- Para viabilizar a validação de todas as regras de negócio em milissegundos utilizando o `FakeRepository` nos testes unitários
 
 #### Arquivos alterados
 
@@ -170,15 +162,14 @@ Arquivos Python:
 
 #### Commits relevantes
 
-- `e4ecb22` — [Refactor] Ajuste na camada de serviços e tratamento de erros na API
-- `ab5eec4` — [Feat] Implementação da camada de serviços, API Flask e testes e2e
-- `9849b96` — [Feat] Implementação da camada de serviços
-- `e4bd853` — docs: atualiza README com responsabilidades da equipe e instruções de teste
-- `937bad5` — Fix: Restaura API Flask funcional após corrupção em merge
+- `9849b96` a `ab5eec4` — Implementação base da camada de serviços, endpoints Flask e testes E2E
+- `e4ecb22` — Refatoração da camada de serviços e ajustes de tratamento de erro na API
+- `937bad5` — Fix: Restauração da estrutura dos endpoints da API Flask após corrupção gerada por conflito de merge
+- `2092bf7` — Docs: Padronização do username oficial e correção de formatação
 
 #### Uso de IA
 
-- Usei o Claude exclusivamente como ferramenta de apoio para tirar dúvidas conceituais sobre injeção de dependências, padrões de tratamento de erros HTTP e estruturação de testes E2E.
+- Utilizei IA exclusivamente para tirar dúvidas conceituais sobre o funcionamento do `pytest` com o Flask e para entender mensagens de erro do terminal (ex: `SyntaxError` durante resolução de conflitos de merge). Todo o código commitado foi escrito e validado por mim.
 
 ## Parte 2 - decisões da semana 2
 
@@ -232,7 +223,7 @@ Arquivos Python:
 #### Por que
 
 - Para persistir os agregados em SQLite sem colocar dependências de banco de dados dentro do domínio
-- Para validar a conversão entre os objetos do domínio e os registros persistidos
+- Para validar a conversão entre os objetos do domínio e os persistidos
 - Para permitir testar o contrato dos repositórios sem depender do banco nos testes unitários
 
 #### Arquivos alterados
