@@ -191,3 +191,36 @@ Arquivos de configuração:
 
 #### Uso de IA
 - Usei IA como apoio para estruturar e revisar os mapeamentos, repositórios e testes de persistência. As decisões finais foram ajustadas ao modelo e à estrutura do projeto.
+
+### João Gabriel de Azevedo
+
+#### O que implementei
+- Criação da suíte de testes unitários para a nova entidade `ItemPedido`, cobrindo cálculo de subtotais, validações de integridade (tipo de produto e quantidade estritamente positiva), igualdade por valor e garantia de imutabilidade com dataclass congelada (`frozen=True`)
+- Atualização e expansão dos testes unitários de `Cliente` e `Endereco`, validando a geração automática de identificador UUID hex, suporte a ID customizado, associação com a entidade `Endereco`, validação de tipos e imutabilidade de `Endereco`
+- Atualização e expansão dos testes unitários de `Pedido` e `Restaurante`, validando identificadores únicos (`id`), normalização automática de itens para tuplas de `ItemPedido`, aceitação de itens como `Produto`, `ItemPedido` ou coleções mistas, cálculo dinâmico da propriedade `total` a partir dos subtotais e rejeição de itens inválidos ou coleções vazias
+
+#### Por que
+- Para assegurar que as novas regras de negócio e agregados introduzidos nas entidades e objetos de valor estejam plenamente cobertos por testes automatizados
+- Para garantir que a integridade dos agregados (como geração de ID e imutabilidade de value objects) seja validada no nível de domínio
+- Para prevenir regressões e assegurar que a suíte de testes continue consistente com a evolução do domínio
+
+#### Arquivos alterados
+
+Arquivos Python:
+- `tests/unit/test_item_pedido.py`
+- `tests/unit/test_cliente.py`
+- `tests/unit/test_endereco.py`
+- `tests/unit/test_pedido.py`
+- `tests/unit/test_restaurante.py`
+
+Arquivos Markdown:
+- `DECISIONS.md`
+
+#### Commits relevantes
+- `436a8ab` — [Test] Testes unitários para a entidade ItemPedido
+- `299b640` — [Test] Atualização dos testes unitários de Cliente e Endereco
+- `e8f972c` — [Test] Atualização dos testes unitários de Pedido e Restaurante
+
+#### Uso de IA
+- Usei IA para apoiar no levantamento e planejamento dos cenários de teste necessários para as novas regras de negócio dos agregados.
+- Também usei IA para revisar a cobertura dos casos de borda e auxiliar na redação e organização desta documentação de decisões do projeto.
