@@ -77,7 +77,11 @@ def create_app(cliente_repo=None, restaurante_repo=None, pedido_repo=None, entre
     @app.post("/restaurantes")
     def criar_restaurante():
         dados = _corpo_json()
-        restaurante_id = services.criar_restaurante(_texto(dados, "nome"), restaurante_repo)
+        restaurante_id = services.criar_restaurante(
+            nome=_texto(dados, "nome"),
+            restaurante_repo=restaurante_repo,
+            produtos=dados.get("produtos"),
+        )
         return jsonify({"restaurante_id": restaurante_id}), 201
 
     @app.get("/restaurantes")
