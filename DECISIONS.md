@@ -149,3 +149,45 @@ Arquivos Python:
 
 #### Uso de IA
 - Usei IA para revisar as regras do domínio.
+
+## Parte 3 - decisões da semana 3
+
+### Davi França Emmerick de Souza
+
+#### O que implementei
+- Adicionei identificadores estáveis às raízes dos agregados `Cliente`, `Pedido` e `Restaurante`
+- Criei os mapeamentos ORM com SQLAlchemy para persistir os agregados e os itens do pedido
+- Implementei `AbstractRepository` e repositórios SQLAlchemy com operações para adicionar, buscar e listar agregados
+- Criei testes de integração com SQLite para persistir e recuperar os três agregados
+- Criei `FakeRepository` para testar o contrato básico do repositório e atualizei o teste de `Pedido` para refletir seus itens como `ItemPedido`
+
+#### Por que
+- Para persistir os agregados em SQLite sem colocar dependências de banco de dados dentro do domínio
+- Para validar a conversão entre os objetos do domínio e os registros persistidos
+- Para permitir testar o contrato dos repositórios sem depender do banco nos testes unitários
+
+#### Arquivos alterados
+
+Arquivos Python:
+- `src/domain/entities/cliente.py`
+- `src/domain/entities/pedido.py`
+- `src/domain/entities/restaurante.py`
+- `src/adapters/__init__.py`
+- `src/adapters/orm.py`
+- `src/adapters/repository.py`
+- `tests/fakes.py`
+- `tests/unit/test_pedido.py`
+- `tests/unit/test_repository.py`
+- `tests/integration/test_repositories.py`
+
+Arquivos de configuração:
+- `requirements.txt`
+
+#### Commits relevantes
+- `bd56b97` — [Feat] SQLAlchemy e atualização nas dependências
+- `d058f44` — [Feat] Entidades
+- `ac665e3` — [Feat] Agregado dos repositórios
+- `70f7257` — [Fix] Ajuste no teste, esperava uma tupla antes
+
+#### Uso de IA
+- Usei IA como apoio para estruturar e revisar os mapeamentos, repositórios e testes de persistência. As decisões finais foram ajustadas ao modelo e à estrutura do projeto.
