@@ -1,3 +1,5 @@
+"""Testes unitários para o agregado Pedido."""
+
 import pytest
 
 from src.domain.entities.item_pedido import ItemPedido
@@ -6,6 +8,7 @@ from src.domain.entities.produto import Produto
 
 
 def test_pedido_criacao_com_sucesso_a_partir_de_produtos():
+    """Valida instanciação de pedido a partir de instâncias de Produto com cálculo automático do total."""
     item1 = Produto(nome="Pizza", preco=45.50)
     item2 = Produto(nome="Refrigerante", preco=8.50)
     itens = [item1, item2]
@@ -21,12 +24,14 @@ def test_pedido_criacao_com_sucesso_a_partir_de_produtos():
 
 
 def test_pedido_criacao_com_id_customizado():
+    """Valida que o id customizado informado é mantido pelo agregado."""
     item = Produto(nome="Sanduíche", preco=20.0)
     pedido = Pedido(cliente="Carlos", itens=[item], id="pedido-custom-999")
     assert pedido.id == "pedido-custom-999"
 
 
 def test_pedido_criacao_com_itens_item_pedido():
+    """Valida criação de pedido passando diretamente instâncias de ItemPedido com quantidades."""
     p1 = Produto(nome="Pizza", preco=40.0)
     p2 = Produto(nome="Refrigerante", preco=8.0)
     item1 = ItemPedido(produto=p1, quantidade=2)
@@ -39,6 +44,7 @@ def test_pedido_criacao_com_itens_item_pedido():
 
 
 def test_pedido_criacao_com_itens_mistos():
+    """Valida normalização mista recebendo Produto e ItemPedido simultaneamente."""
     p1 = Produto(nome="Hambúrguer", preco=25.0)
     p2 = Produto(nome="Batata Frita", preco=15.0)
     item2 = ItemPedido(produto=p2, quantidade=2)
@@ -50,6 +56,7 @@ def test_pedido_criacao_com_itens_mistos():
 
 
 def test_pedido_deve_remover_espacos_em_branco_do_cliente():
+    """Garante remoção de espaços em branco sobressalentes no nome do cliente."""
     itens = [Produto(nome="Sanduíche", preco=20.0)]
     pedido = Pedido(cliente="  Carlos Eduardo  ", itens=itens)
 
@@ -57,6 +64,7 @@ def test_pedido_deve_remover_espacos_em_branco_do_cliente():
 
 
 def test_pedido_com_um_unico_item():
+    """Valida cálculo do total para pedido composto de exatamente um item."""
     itens = [Produto(nome="Prato Feito", preco=25.0)]
     pedido = Pedido(cliente="Ana", itens=itens)
 
@@ -65,6 +73,7 @@ def test_pedido_com_um_unico_item():
 
 @pytest.mark.parametrize("cliente_invalido", [None, "", "   "])
 def test_pedido_cliente_invalido_deve_lancar_excecao(cliente_invalido):
+    """Garante que cliente nulo ou vazio lance ValueError."""
     itens = [Produto(nome="Suco", preco=7.0)]
     with pytest.raises(ValueError, match="cliente é obrigatório"):
         Pedido(cliente=cliente_invalido, itens=itens)
@@ -72,11 +81,13 @@ def test_pedido_cliente_invalido_deve_lancar_excecao(cliente_invalido):
 
 @pytest.mark.parametrize("itens_invalidos", [[], (), None])
 def test_pedido_sem_itens_deve_lancar_excecao(itens_invalidos):
+    """Garante que pedido sem itens (vazio ou nulo) lance ValueError."""
     with pytest.raises(ValueError, match="pedido deve conter ao menos um item"):
         Pedido(cliente="Ana", itens=itens_invalidos)
 
 
 @pytest.mark.parametrize("item_invalido", ["string", 123, {"nome": "pizza"}])
 def test_pedido_item_tipo_invalido_deve_lancar_excecao(item_invalido):
+    """Garante que itens que não sejam Produto ou ItemPedido lancem ValueError."""
     with pytest.raises(ValueError, match="itens do pedido devem ser Produtos ou ItemPedido"):
         Pedido(cliente="Ana", itens=[item_invalido])
