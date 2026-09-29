@@ -1,56 +1,101 @@
-# Serviços do sistema de delivery.
-from src.adapters.orm import create_sqlite_engine
-from src.adapters.repository import ClienteRepository, PedidoRepository, RestauranteRepository
-from src.domain.entities.cliente import Cliente
-from src.domain.entities.endereco import Endereco
-from src.domain.entities.entrega import Entrega
-from src.domain.entities.pedido import Pedido
-from src.domain.entities.produto import Produto
-from src.domain.entities.restaurante import Restaurante
+from __future__ import annotations
+import math
+from typing import TYPE_CHECKING
+from src.domain.model import Cliente, Endereco, Entrega, ItemPedido, Pedido, Produto, Restaurante
 
-_engine = create_sqlite_engine()
-_cliente_repo = ClienteRepository(_engine)
-_restaurante_repo = RestauranteRepository(_engine)
-_pedido_repo = PedidoRepository(_engine)
+if TYPE_CHECKING: 
+    from src.adapters.repository import AbstractRepository
+STATUS_ENTREGA = ("pendente", "em_transito", "entregue", "cancelada")
 
-_entregas: dict[str, Entrega] = {}
+class NaoEncontrado(ValueError):
+    """Recurso pedido não existe (a API responde 404)."""
 
+class Conflito(ValueError):
+    """Operação viola uma unicidade, ex.: telefone já cadastrado (a API responde 409)."""
 
-def criar_cliente(nome: str, telefone: str, rua: str | None = None, numero: str | None = None) -> str:
-    endereco = Endereco(rua=rua, numero=numero) if rua and numero else None
+def criar_cliente(
+    nome: str,
+    telefone: str,
+    rua: str | None,
+    numero: str | None,
+    cliente_repo: AbstractRepository,
+) -> str:
+    endereco = None
+    if rua is not None or numero is not None:
+        endereco = Endereco(rua=rua, numero=numero) 
     cliente = Cliente(nome=nome, telefone=telefone, endereco=endereco)
-    _cliente_repo.add(cliente)
+    if any(existente.telefone == cliente.telefone for existente in cliente_repo.list()):
+        raise Conflito("telefone já cadastrado")
+    cliente_repo.add(cliente)
     return cliente.id
 
+def consultar_cliente(cliente_id: str, cliente_repo: AbstractRepository) -> Cliente:
+    cliente = cliente_repo.get(cliente_id)
+    if cliente is None:
+        raise NaoEncontrado("cliente não encontrado")
+    return cliente
 
-def criar_restaurante(nome: str) -> str:
+def criar_restaurante(nome: str, restaurante_repo: AbstractRepository) -> str:
     restaurante = Restaurante(nome=nome)
-    _restaurante_repo.add(restaurante)
+    if any(existente.nome == restaurante.nome for existente in restaurante_repo.list()):
+        raise Conflito("restaurante já cadastrado")
+    restaurante_repo.add(restaurante)
     return restaurante.id
 
+def listar_restaurantes(restaurante_repo: AbstractRepository) -> list[Restaurante]:
+    return restaurante_repo.list()
 
-def criar_pedido(cliente: str, produtos: list[dict]) -> str:
-    itens = [Produto(nome=p["nome"], preco=p["preco"]) for p in produtos]
-    pedido = Pedido(cliente=cliente, itens=itens)
-    _pedido_repo.add(pedido)
-    _entregas[pedido.id] = Entrega(pedido_id=pedido.id)
+def _montar_item(dado) -> ItemPedido:
+    if not isinstance(dado, dict):
+        raise ValueError("cada produto deve ser um objeto com nome e preco")
+    nome, preco = dado.get("nome"), dado.get("preco")
+    if not isinstance(nome, str):
+        raise ValueError("nome do produto é obrigatório")
+    if isinstance(preco, bool) or not isinstance(preco, (int, float)) or not math.isfinite(preco):
+        raise ValueError("preco do produto deve ser um número")
+    return ItemPedido(Produto(nome=nome, preco=preco), quantidade=dado.get("quantidade", 1))
+
+def criar_pedido(
+    cliente_id: str,
+    produtos: list[dict],
+    cliente_repo: AbstractRepository,
+    pedido_repo: AbstractRepository,
+    entregas: dict[str, Entrega],
+) -> str:
+    consultar_cliente(cliente_id, cliente_repo)  
+    if not isinstance(produtos, list) or not produtos:
+        raise ValueError("pedido deve conter ao menos um item")
+    itens = [_montar_item(produto) for produto in produtos]
+    pedido = Pedido(cliente=cliente_id, itens=itens)  
+    pedido_repo.add(pedido)
+    entregas[pedido.id] = Entrega(pedido_id=pedido.id)
     return pedido.id
 
-
-def consultar_pedido(pedido_id: str) -> Pedido:
-    pedido = _pedido_repo.get(pedido_id)
+def consultar_pedido(pedido_id: str, pedido_repo: AbstractRepository) -> Pedido:
+    pedido = pedido_repo.get(pedido_id)
     if pedido is None:
-        raise ValueError("pedido não encontrado")
+        raise NaoEncontrado("pedido não encontrado")
     return pedido
 
+def listar_pedidos_do_cliente(
+    cliente_id: str,
+    cliente_repo: AbstractRepository,
+    pedido_repo: AbstractRepository,
+) -> list[Pedido]:
+    consultar_cliente(cliente_id, cliente_repo)
+    return [pedido for pedido in pedido_repo.list() if pedido.cliente == cliente_id]
 
-def atualizar_status_entrega(pedido_id: str, novo_status: str) -> str:
-    entrega = _entregas.get(pedido_id)
+def consultar_status_entrega(pedido_id: str, entregas: dict[str, Entrega]) -> str:
+    entrega = entregas.get(pedido_id)
     if entrega is None:
-        raise ValueError("entrega não encontrada")
-    entrega.status = novo_status
+        raise NaoEncontrado("entrega não encontrada")
     return entrega.status
 
-
-def listar_pedidos_do_cliente(cliente: str) -> list[Pedido]:
-    return [pedido for pedido in _pedido_repo.list() if pedido.cliente == cliente]
+def atualizar_status_entrega(pedido_id: str, novo_status: str, entregas: dict[str, Entrega]) -> str:
+    entrega = entregas.get(pedido_id)
+    if entrega is None:
+        raise NaoEncontrado("entrega não encontrada")
+    if novo_status not in STATUS_ENTREGA:
+        raise ValueError(f"status inválido; use um de: {', '.join(STATUS_ENTREGA)}")
+    entrega.status = novo_status
+    return entrega.status
