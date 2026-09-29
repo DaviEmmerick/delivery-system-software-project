@@ -12,9 +12,11 @@ class Pedido:
         itens: Iterable[Produto | ItemPedido],
         id: str | None = None,
     ):
-        if not cliente or not cliente.strip():
+        if not isinstance(cliente, str) or not cliente.strip():
             raise ValueError("cliente é obrigatório")
         if itens is None:
+            raise ValueError("pedido deve conter ao menos um item")
+        if not isinstance(itens, Iterable):
             raise ValueError("pedido deve conter ao menos um item")
 
         itens_normalizados = []

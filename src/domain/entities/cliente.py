@@ -11,9 +11,9 @@ class Cliente:
         endereco: Endereco | None = None,
         id: str | None = None,
     ):
-        if not nome or not nome.strip():
+        if not isinstance(nome, str) or not nome.strip():
             raise ValueError("nome é obrigatório")
-        if not telefone or len(telefone.strip()) < 10:
+        if not isinstance(telefone, str) or len(telefone.strip()) < 10:
             raise ValueError("telefone inválido")
         if endereco is not None and not isinstance(endereco, Endereco):
             raise ValueError("endereco deve ser um Endereco")
