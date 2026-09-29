@@ -2,11 +2,12 @@
 
 ## Quem faz o quê
 
-| Integrante | Agregado(s) / módulo(s) | Responsabilidade |
-| --- | --- | --- |
-| Davi França Emmerick de Souza | Dominio / entidades / regras de negócio | Estrutura do domínio, entidades e validações |
-| Leandro Machado | Infraestrutura / ambiente | Configuração do projeto e suporte ao repositório |
-| João Gabriel de Azevedo | Testes unitários / domínio | Implementação da suíte de testes unitários e qualidade do domínio |
+| Integrante                                       | Agregado(s) / módulo(s)                     | Responsabilidade                                                  |
+| ------------------------------------------------ | ------------------------------------------- | ----------------------------------------------------------------- |
+| Davi França Emmerick de Souza                    | Dominio / entidades / regras de negócio     | Estrutura do domínio, entidades e validações                      |
+| Leandro Machado                                  | Infraestrutura / ambiente                   | Configuração do projeto e suporte ao repositório                  |
+| João Gabriel de Azevedo                          | Testes unitários / domínio                  | Implementação da suíte de testes unitários e qualidade do domínio |
+| Victor Antunes dos Santos (@VictorAntunesCastro) | Camada de serviço, entrypoints e testes e2e | Orquestração de casos de uso, API Flask e testes de ponta a ponta |
 
 ## Visão geral
 
@@ -25,4 +26,3 @@ Para executar apenas os testes unitários com saída detalhada:
 ```bash
 pytest -v tests/unit
 ```
-
