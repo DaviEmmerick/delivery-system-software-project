@@ -1,10 +1,19 @@
-﻿import pytest
+import pytest
+
 from src.domain.entities.restaurante import Restaurante
 
 
 def test_restaurante_criacao_com_sucesso():
     restaurante = Restaurante(nome="Pizzaria da Nonna")
     assert restaurante.nome == "Pizzaria da Nonna"
+    assert restaurante.id is not None
+    assert isinstance(restaurante.id, str)
+    assert len(restaurante.id) == 32
+
+
+def test_restaurante_criacao_com_id_customizado():
+    restaurante = Restaurante(nome="Pizzaria da Nonna", id="rest-custom-123")
+    assert restaurante.id == "rest-custom-123"
 
 
 def test_restaurante_deve_remover_espacos_em_branco_do_nome():
