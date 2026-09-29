@@ -1,4 +1,5 @@
 ﻿import pytest
+from src.domain.entities.item_pedido import ItemPedido
 from src.domain.entities.pedido import Pedido
 from src.domain.entities.produto import Produto
 
@@ -11,7 +12,7 @@ def test_pedido_criacao_com_sucesso_e_calculo_total():
     pedido = Pedido(cliente="Carlos Eduardo", itens=itens)
 
     assert pedido.cliente == "Carlos Eduardo"
-    assert pedido.itens == itens
+    assert pedido.itens == (ItemPedido(item1), ItemPedido(item2))
     assert pytest.approx(pedido.total) == 54.00
 
 
