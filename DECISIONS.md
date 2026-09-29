@@ -146,6 +146,7 @@ Arquivos Markdown:
 - API Flask (`src/entrypoints/flask_app.py`) montada por uma função `create_app()`, com 8 endpoints e tradução das exceções de serviço em 400, 404 e 409, sempre com corpo JSON
 - Regras que estavam faltando: pedido só é criado para cliente existente, `quantidade` entra no total do pedido, telefone e nome de restaurante duplicados são recusados e o status da entrega só aceita valores conhecidos
 - Testes unitários dos serviços com repositórios fake (`tests/unit/test_services.py`) e testes e2e da API (`tests/e2e/test_api.py`) cobrindo sucesso, 400, 404 e 409
+- Restauração da estrutura dos endpoints da API Flask após corrupção gerada por um conflito de merge
 
 #### Por que
 
@@ -173,6 +174,7 @@ Arquivos Python:
 - `ab5eec4` — [Feat] Implementação da camada de serviços, API Flask e testes e2e
 - `9849b96` — [Feat] Implementação da camada de serviços
 - `e4bd853` — docs: atualiza README com responsabilidades da equipe e instruções de teste
+- `937bad5` — Fix: Restaura API Flask funcional após corrupção em merge
 
 - #### Uso de IA
 - Usei o Claude exclusivamente como ferramenta de apoio para tirar dúvidas conceituais sobre injeção de dependências, padrões de tratamento de erros HTTP e estruturação de testes E2E.
