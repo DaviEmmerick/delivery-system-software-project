@@ -176,7 +176,8 @@ Arquivos Python:
 - `e4bd853` — docs: atualiza README com responsabilidades da equipe e instruções de teste
 - `937bad5` — Fix: Restaura API Flask funcional após corrupção em merge
 
-- #### Uso de IA
+#### Uso de IA
+
 - Usei o Claude exclusivamente como ferramenta de apoio para tirar dúvidas conceituais sobre injeção de dependências, padrões de tratamento de erros HTTP e estruturação de testes E2E.
 
 ## Parte 2 - decisões da semana 2

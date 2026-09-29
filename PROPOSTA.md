@@ -55,7 +55,7 @@ Construir um sistema de delivery eficiente para facilitar pedidos, entregas e o 
 - Leandro Machado — GitHub: @LeandroMachadoCC
 - Davi França Emmerick de Souza — GitHub: @DaviEmmerick
 - Joao Gabriel Azevedo — GitHub: @JoaoGAzevedo
-- Victor Antunes dos Santos — GitHub: @victorantunes
+- Victor Antunes dos Santos — GitHub: @VictorAntunesCastro
 
 ## Divisão inicial de responsabilidades
 
