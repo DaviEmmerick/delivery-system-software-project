@@ -25,7 +25,10 @@ def criar_cliente_endpoint():
 def criar_restaurante_endpoint():
     dados = request.json
     try:
-        restaurante_id = services.criar_restaurante(nome=dados["nome"])
+        restaurante_id = services.criar_restaurante(
+            nome=dados["nome"],
+            produtos=dados.get("produtos"),
+        )
         return jsonify({"restaurante_id": restaurante_id}), 201
     except (ValueError, KeyError) as e:
         return jsonify({"erro": str(e)}), 400
