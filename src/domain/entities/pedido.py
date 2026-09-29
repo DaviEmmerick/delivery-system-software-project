@@ -1,14 +1,20 @@
 from collections.abc import Iterable
+from uuid import uuid4
 
 from src.domain.entities.item_pedido import ItemPedido
 from src.domain.entities.produto import Produto
 
 
 class Pedido:
-    def __init__(self, cliente: str, itens: Iterable[Produto | ItemPedido]):
+    def __init__(
+        self,
+        cliente: str,
+        itens: Iterable[Produto | ItemPedido],
+        id: str | None = None,
+    ):
         if not cliente or not cliente.strip():
             raise ValueError("cliente é obrigatório")
-        if not itens:
+        if itens is None:
             raise ValueError("pedido deve conter ao menos um item")
 
         itens_normalizados = []
@@ -22,6 +28,9 @@ class Pedido:
 
         self.cliente = cliente.strip()
         self.itens = tuple(itens_normalizados)
+        if not self.itens:
+            raise ValueError("pedido deve conter ao menos um item")
+        self.id = id or uuid4().hex
 
     @property
     def total(self) -> float:
