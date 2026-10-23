@@ -214,17 +214,11 @@ Arquivos Python:
 
 #### O que implementei
 
-- Adicionei identificadores estáveis às raízes dos agregados `Cliente`, `Pedido` e `Restaurante`
-- Criei os mapeamentos ORM com SQLAlchemy para persistir os agregados e os itens do pedido
-- Implementei `AbstractRepository` e repositórios SQLAlchemy com operações para adicionar, buscar e listar agregados
-- Criei testes de integração com SQLite para persistir e recuperar os três agregados
-- Criei `FakeRepository` para testar o contrato básico do repositório e atualizei o teste de `Pedido` para refletir seus itens como `ItemPedido`
+- Adicionei identificadores estáveis às entidades `Cliente`, `Pedido` e `Restaurante`.
 
 #### Por que
 
-- Para persistir os agregados em SQLite sem colocar dependências de banco de dados dentro do domínio
-- Para validar a conversão entre os objetos do domínio e os persistidos
-- Para permitir testar o contrato dos repositórios sem depender do banco nos testes unitários
+- Para que cada entidade de domínio pudesse ser identificada de forma estável.
 
 #### Arquivos alterados
 
@@ -233,28 +227,14 @@ Arquivos Python:
 - `src/domain/entities/cliente.py`
 - `src/domain/entities/pedido.py`
 - `src/domain/entities/restaurante.py`
-- `src/adapters/__init__.py`
-- `src/adapters/orm.py`
-- `src/adapters/repository.py`
-- `tests/fakes.py`
-- `tests/unit/test_pedido.py`
-- `tests/unit/test_repository.py`
-- `tests/integration/test_repositories.py`
-
-Arquivos de configuração:
-
-- `requirements.txt`
 
 #### Commits relevantes
 
-- `bd56b97` — [Feat] SQLAlchemy e atualização nas dependências
 - `d058f44` — [Feat] Entidades
-- `ac665e3` — [Feat] Agregado dos repositórios
-- `70f7257` — [Fix] Ajuste no teste, esperava uma tupla antes
 
 #### Uso de IA
 
-- Usei IA como apoio para estruturar e revisar os mapeamentos, repositórios e testes de persistência. As decisões finais foram ajustadas ao modelo e à estrutura do projeto.
+- Usei IA como apoio para revisar as alterações nas entidades de domínio.
 
 ### João Gabriel de Azevedo
 
@@ -294,3 +274,21 @@ Arquivos Markdown:
 
 - Usei IA para apoiar no levantamento e planejamento dos cenários de teste necessários para as novas regras de negócio dos agregados.
 - Também usei IA para revisar a cobertura dos casos de borda e auxiliar na redação e organização desta documentação de decisões do projeto.
+
+## Parte 2 - checkpoint 1 (22/10/2026)
+
+### Davi França Emmerick de Souza
+
+#### O que implementei
+
+- Preparei o rascunho da análise arquitetural em `docs/arquitetura.md`, usando o código, o histórico e os testes atuais como evidência.
+- Preparei o ADR retrospectivo `docs/adr/0001-modelagem-dos-agregados-de-dominio.md`, referente à modelagem das entidades e regras de domínio.
+- Os hashes dos commits próprios deste checkpoint devem ser acrescentados depois que os commits forem criados.
+
+#### Decisão de projeto
+
+- Modelar `Endereco` e `ItemPedido` como objetos de valor imutáveis e manter o cálculo dos subtotais e do total dentro do domínio.
+
+#### Uso de IA
+
+- Usei um assistente de IA para extrair os requisitos do enunciado em PDF, examinar o repositório e preparar rascunhos da documentação. Revisei as evidências contra o código, o histórico e a suíte local; os integrantes responsáveis ainda precisam validar os ADRs atribuídos a eles e registrar sua própria autoria nos commits.
