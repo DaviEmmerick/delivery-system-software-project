@@ -301,3 +301,30 @@ Arquivos Markdown:
 #### Uso de IA
 
 - Usei um assistente de IA para extrair os requisitos do enunciado em PDF, examinar o repositório e preparar rascunhos da documentação. Revisei as evidências contra o código, o histórico e a suíte local; os integrantes responsáveis ainda precisam validar os ADRs atribuídos a eles e registrar sua própria autoria nos commits.
+
+
+### Victor Antunes dos Santos (@VictorAntunesCastro)
+
+#### O que implementei
+
+- Elaborei o ADR `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md`, documentando a decisão de isolar a camada de serviços (`src/service_layer/services.py`) do entrypoint HTTP (`src/entrypoints/flask_app.py`) por meio da injeção explícita de repositórios (`AbstractRepository` / `FakeRepository`) e do tratamento centralizado de exceções no Flask.
+- Revisei e complementei o documento `docs/arquitetura.md`, adicionando explicitamente as restrições arquiteturais do projeto (Seção 2), detalhando o papel do `FakeRepository` e o mapeamento de erros HTTP na tabela de componentes (Seção 3) e incluindo nas evidências (Seção 6) o comparativo real de desempenho entre a suíte unitária (`114` testes em `~0,14 s`) e a suíte E2E (`34` testes em `~0,32 s`), além da referência aos ADRs do grupo.
+
+#### Arquivos alterados
+
+- `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md`
+- `docs/arquitetura.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- Commits da decisão arquitetural documentada no ADR (Fase 1): `9849b96`, `ab5eec4`, `e4ecb22` e `937bad5`
+- Commits deste Checkpoint 1 (Fase 2): adição de `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md`, revisão de `docs/arquitetura.md` e atualização de `DECISIONS.md`
+
+#### Decisão de projeto
+
+- Isolar a orquestração dos casos de uso em `src/service_layer/services.py` recebendo instâncias de `AbstractRepository` por parâmetro e manter `src/entrypoints/flask_app.py` como um adaptador HTTP fino com `@app.errorhandler`, permitindo validar toda a lógica de serviço em milissegundos com `FakeRepository` sem depender de Flask ou SQLite.
+
+#### Uso de IA
+
+- Utilizei o assistente de IA (Gemini) para revisar o docs/arquitetura.md em busca de lacunas em relação ao barema, me auxiliar na decisão arquitetural da camada de serviços e corrigir a redação do meu ADR (docs/adr/0003-camada-de-servico-e-entrypoint-flask.md) e deste autorrelato. Todo o texto foi baseado no código e nos testes que implementei na API Flask. Revisei e validei todo o conteúdo ajustado contra o código-fonte e a suíte de testes do repositório.
