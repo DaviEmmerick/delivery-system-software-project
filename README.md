@@ -4,14 +4,14 @@
 
 | Integrante                                       | Agregado(s) / módulo(s)                     | Responsabilidade                                                  |
 | ------------------------------------------------ | ------------------------------------------- | ----------------------------------------------------------------- |
-| Davi França Emmerick de Souza                    | Dominio / entidades / regras de negócio     | Estrutura do domínio, entidades e validações                      |
-| Leandro Machado                                  | Infraestrutura / ambiente                   | Configuração do projeto e suporte ao repositório                  |
+| Davi França Emmerick de Souza                    | Domínio / entidades / regras de negócio      | Estrutura do domínio, entidades, agregados e validações            |
+| Leandro Machado                                  | Infraestrutura / ambiente                   | Configuração do projeto, CI e suporte ao repositório              |
 | João Gabriel de Azevedo                          | Testes unitários / domínio                  | Implementação da suíte de testes unitários e qualidade do domínio |
 | Victor Antunes dos Santos (@VictorAntunesCastro) | Camada de serviço, entrypoints e testes e2e | Orquestração de casos de uso, API Flask e testes de ponta a ponta |
 
 ## Visão geral
 
-Este projeto implementa uma base inicial de domínio para um sistema de delivery, com foco em entidades e regras de negócio antes da camada de serviços e interfaces.
+Este projeto implementa um sistema de delivery com entidades e regras de domínio, uma camada de serviços, uma API REST em Flask e adapters de persistência com SQLAlchemy. A suíte de testes cobre o domínio e os serviços, a API e a integração com SQLite.
 
 ## Como executar os testes
 
