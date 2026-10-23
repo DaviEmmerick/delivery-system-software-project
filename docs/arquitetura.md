@@ -16,8 +16,12 @@ As prioridades abaixo são propostas para o escopo atual. As medidas são crité
 
 ### Restrições e objetivos
 
-- Objetivos: manter as regras de negócio testáveis fora dos frameworks, oferecer uma API HTTP simples e persistir os agregados sem acoplar as entidades às tabelas do SQLAlchemy.
-- Estado atual relevante: `create_sqlite_engine()` usa SQLite em memória por padrão; as entregas são mantidas em um dicionário em memória.
+- **Restrições:**
+  - Stack tecnológica obrigatória definida pela disciplina: **Python 3**, **pytest**, **Flask** (ou FastAPI) e **SQLAlchemy** com **SQLite**.
+  - Estrutura de pacotes seguindo a divisão arquitetural da Fase 1 (`src/domain/`, `src/service_layer/`, `src/adapters/` e `src/entrypoints/`), mantendo a suíte de testes existente verde na Integração Contínua (GitHub Actions em Python 3.12).
+  - Regras de processo: histórico de commits preservado (sem rebase destrutivo ou force-push) e rastreabilidade por integrante.
+- **Objetivos:** manter as regras de negócio e a orquestração de casos de uso testáveis fora dos frameworks, oferecer uma API HTTP REST simples com tratamento padronizado de erros e persistir os agregados sem acoplar as entidades às tabelas do SQLAlchemy.
+- **Estado atual relevante:** `create_sqlite_engine()` usa SQLite em memória por padrão (`sqlite+pysqlite:///:memory:`); as entregas (`Entrega`) são mantidas em um dicionário em memória injetado nos serviços, e não em tabela SQLAlchemy.
 
 ## 3. Arquitetura atual
 
@@ -52,11 +56,11 @@ flowchart LR
 
 | Componente | Localização | Responsabilidade |
 | --- | --- | --- |
-| Entry point | `src/entrypoints/flask_app.py` | Define rotas, valida o formato básico das requisições, serializa respostas e converte exceções em respostas HTTP. |
-| Service Layer | `src/service_layer/services.py` | Orquestra casos de uso e validações de entrada, usando entidades e repositórios recebidos por parâmetro. |
-| Domínio | `src/domain/entities/` e `src/domain/model.py` | Representa entidades, objetos de valor e regras de negócio sem importar Flask ou SQLAlchemy. |
-| Repositórios e ORM | `src/adapters/repository.py` e `src/adapters/orm.py` | Convertem entre entidades e modelos SQLAlchemy e implementam operações de persistência. |
-| Testes | `tests/unit/`, `tests/integration/` e `tests/e2e/` | Verificam regras isoladas, persistência SQLite e fluxos HTTP. |
+| Entry point | `src/entrypoints/flask_app.py` | Define rotas via `create_app()`, valida o formato básico do JSON (`_corpo_json`, `_texto`), injeta repositórios nos serviços, serializa respostas e traduz exceções (`NaoEncontrado` -> 404, `Conflito` -> 409, `ValueError` -> 400) em HTTP. |
+| Service Layer | `src/service_layer/services.py` | Orquestra os 9 casos de uso, valida pré-condições de unicidade e existência e coordena entidades, repositórios (`AbstractRepository`) e o dicionário de entregas recebidos por parâmetro. |
+| Domínio | `src/domain/entities/` e `src/domain/model.py` | Representa entidades (`Cliente`, `Restaurante`, `Pedido`, `Produto`, `Entrega`), objetos de valor imutáveis (`Endereco`, `ItemPedido`) e regras de negócio sem importar Flask ou SQLAlchemy. |
+| Repositórios e ORM | `src/adapters/repository.py` e `src/adapters/orm.py` | Declaram `AbstractRepository` e `SQLAlchemyRepository`, convertem entre entidades e modelos ORM (`_to_model` / `_to_entity`) e gerenciam a persistência em SQLite. |
+| Testes | `tests/unit/` e `tests/e2e/` (`tests/integration/` reservado na estrutura) | `tests/unit/` verifica entidades de domínio e serviços com `FakeRepository` em memória; `tests/e2e/` exercita os fluxos HTTP no Flask integrados aos repositórios SQLAlchemy e SQLite em memória. |
 
 ## 4. Trade-offs e riscos
 
@@ -82,10 +86,15 @@ Para o domínio atual, manteríamos a arquitetura em camadas, pois as regras de 
 
 ## 6. Evidências do repositório
 
-- `a10761d` registra a entrega desta análise arquitetural e do ADR de modelagem dos agregados.
-- `bd56b97` adicionou o mapeamento SQLAlchemy em `src/adapters/orm.py` (61 linhas) e a dependência, mantendo o ORM fora das entidades.
-- `ac665e3` introduziu `src/adapters/repository.py` com 119 linhas, incluindo operações comuns e conversões específicas de cliente, pedido e restaurante.
-- `9849b96` adicionou 56 linhas de serviços; `ab5eec4` adicionou a API Flask e testes E2E (143 inserções em três arquivos). Em conjunto, os commits mostram a separação entre orquestração, HTTP e persistência.
-- `41cd01f` adicionou o workflow do GitHub Actions para executar pytest em push e pull request contra `main`, usando Python 3.12.
-- A última execução remota consultada foi a [run 48 da CI](https://github.com/DaviEmmerick/delivery-system-software-project/actions/runs/36582866568), com conclusão `success` em 29/09/2026 no commit `6567ee0`. Ela antecede este checkpoint e não valida estas alterações.
-- Na validação local deste checkpoint, `python -m pytest -o addopts= -q` concluiu com **153 testes aprovados em 1,59 s**, em Python 3.14.4. Isso verifica o ambiente local; não substitui a confirmação de uma execução verde da CI no Python 3.12.
+- **Isolamento do ORM e custo de mapeamento (`bd56b97` e `ac665e3`):** `bd56b97` adicionou o mapeamento declarativo SQLAlchemy em `src/adapters/orm.py` (**61 linhas**) mantendo o ORM fora de `src/domain/`; `ac665e3` introduziu `src/adapters/repository.py` (**119 linhas**), onde a conversão manual `_to_model` / `_to_entity` de `Cliente`, `Restaurante` e `Pedido` ocupa 57 linhas em troca de manter as entidades puras.
+- **Separação entre orquestração, HTTP e persistência (`9849b96`, `ab5eec4` e `e4ecb22`):** `9849b96` implementou os 9 casos de uso em `src/service_layer/services.py` (atualmente **117 linhas**) recebendo repositórios por parâmetro; `ab5eec4` adicionou a API Flask em `src/entrypoints/flask_app.py` (**136 linhas**) e os testes E2E sem precisar alterar nenhuma classe de `src/domain/`.
+- **Economia e velocidade proporcionadas pelo `FakeRepository` nos testes (`tests/unit/test_services.py` vs `tests/e2e/test_api.py`):** em `tests/unit/test_services.py` (`linhas 5–15`), um `FakeRepository` de apenas **11 linhas** substitui toda a infraestrutura do SQLAlchemy para testar os 33 cenários da camada de serviço. Comparando os tempos de execução com `pytest -o addopts=`:
+  - Suíte unitária (`tests/unit/`, **114 testes** de domínio e serviços com `FakeRepository`): executa em **~0,14 s** (~1,2 ms por teste).
+  - Suíte E2E (`tests/e2e/test_api.py`, **34 testes** passando pelo Flask, `SQLAlchemyRepository` e SQLite em memória): executa em **~0,32 s** (~9,4 ms por teste, quase 8 vezes mais lento por teste que a suíte unitária).
+  - Suíte completa atual do repositório (**148 testes** somados): executa em **~0,56 s** em Python 3.12.2 (`153 testes em 1,59 s` quando somados os 5 testes locais de integração de repositório validados em Python 3.14.4).
+- **Evidência de lacuna de persistência em `Restaurante` e `Entrega`:** `src/adapters/orm.py` (`linhas 21–26`) e `RestauranteRepository` (`src/adapters/repository.py`, `linhas 83–91`) persistem apenas `id` e `nome`, descartando `Restaurante.produtos`; já o status de `Entrega` é mantido apenas no dicionário `entregas = {}` instanciado em `create_app()` (`src/entrypoints/flask_app.py`, `linha 32`).
+- **ADRs registrados pelo grupo em `docs/adr/`:**
+  - `docs/adr/0001-modelagem-dos-agregados-de-dominio.md` (Davi França): composição de `Cliente`/`Endereco` e `Pedido`/`ItemPedido` imutáveis no domínio (`6b53d71`, `d058f44`).
+  - `docs/adr/0002-Regras-de-negocio.md` (Leandro Machado): validação estrita de tipos e invariantes nas entidades com `ValueError` (`cb7d31a`, `7875dc1`, `ca6d033`, `1213e36`).
+  - `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md` (Victor Antunes): isolamento da Service Layer com injeção explícita de repositórios, `FakeRepository` e tratamento de erros no entrypoint Flask (`9849b96`, `ab5eec4`, `e4ecb22`, `937bad5`).
+- **Integração Contínua (`41cd01f`):** o workflow `.github/workflows/ci.yml` executa o `pytest` automaticamente em cada push e pull request na branch `main` usando Ubuntu e Python 3.12.
