@@ -82,6 +82,7 @@ Para o domínio atual, manteríamos a arquitetura em camadas, pois as regras de 
 
 ## 6. Evidências do repositório
 
+- `a10761d` registra a entrega desta análise arquitetural e do ADR de modelagem dos agregados.
 - `bd56b97` adicionou o mapeamento SQLAlchemy em `src/adapters/orm.py` (61 linhas) e a dependência, mantendo o ORM fora das entidades.
 - `ac665e3` introduziu `src/adapters/repository.py` com 119 linhas, incluindo operações comuns e conversões específicas de cliente, pedido e restaurante.
 - `9849b96` adicionou 56 linhas de serviços; `ab5eec4` adicionou a API Flask e testes E2E (143 inserções em três arquivos). Em conjunto, os commits mostram a separação entre orquestração, HTTP e persistência.

@@ -281,9 +281,18 @@ Arquivos Markdown:
 
 #### O que implementei
 
-- Preparei o rascunho da análise arquitetural em `docs/arquitetura.md`, usando o código, o histórico e os testes atuais como evidência.
-- Preparei o ADR retrospectivo `docs/adr/0001-modelagem-dos-agregados-de-dominio.md`, referente à modelagem das entidades e regras de domínio.
-- Os hashes dos commits próprios deste checkpoint devem ser acrescentados depois que os commits forem criados.
+- Documentei a análise arquitetural em `docs/arquitetura.md`, usando o código, o histórico e os testes atuais como evidência.
+- Registrei em `docs/adr/0001-modelagem-dos-agregados-de-dominio.md` a decisão de modelar as entidades e regras de domínio.
+
+#### Arquivos alterados
+
+- `docs/arquitetura.md`
+- `docs/adr/0001-modelagem-dos-agregados-de-dominio.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- `a10761d` — [Feat] arch.md, adr da modelagem e decisões.md atualizada
 
 #### Decisão de projeto
 
