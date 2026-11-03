@@ -316,8 +316,6 @@ Arquivos Markdown:
 
 - `src/domain/entities/pedido.py`
 - `src/domain/entities/pedido_factory.py`
-- `tests/unit/test_pedido.py`
-- `tests/integration/test_repositories.py`
 - `docs/solid.md`
 - `DECISIONS.md`
 
