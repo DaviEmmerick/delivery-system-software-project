@@ -176,12 +176,3 @@ def test_entrega_memory_repository_cumpre_protocolo_repositorio(cliente_repo, pe
 
     services.atualizar_status_entrega(pedido_id, "em_transito", entrega_repo)
     assert entrega_repo.get(pedido_id).status == "em_transito"
-
-
-def test_servicos_entrega_mantem_compatibilidade_com_dicionario(cliente_repo, pedido_repo):
-    entregas_dict = {}
-    cliente_id = _cliente(cliente_repo)
-    pedido_id = _pedido(cliente_id, cliente_repo, pedido_repo, entregas_dict)
-    assert services.consultar_status_entrega(pedido_id, entregas_dict) == "pendente"
-    assert services.atualizar_status_entrega(pedido_id, "entregue", entregas_dict) == "entregue"
-    assert entregas_dict[pedido_id].status == "entregue"

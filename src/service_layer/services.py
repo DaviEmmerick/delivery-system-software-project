@@ -23,10 +23,10 @@ class Repositorio(Protocol[T]):
 
 
 class EntregaMemoryRepository:
-    """Implementação em memória do contrato Repositorio[Entrega] indexada por pedido_id."""
+    """Implementação padrão em memória do contrato Repositorio[Entrega] indexada por pedido_id."""
 
-    def __init__(self, dados: dict[str, Entrega] | None = None):
-        self._dados: dict[str, Entrega] = dados if dados is not None else {}
+    def __init__(self) -> None:
+        self._dados: dict[str, Entrega] = {}
 
     def add(self, entity: Entrega) -> None:
         self._dados[entity.pedido_id] = entity
@@ -36,15 +36,6 @@ class EntregaMemoryRepository:
 
     def list(self) -> list[Entrega]:
         return list(self._dados.values())
-
-
-def _obter_entrega_repo(
-    entregas: Repositorio[Entrega] | dict[str, Entrega],
-) -> Repositorio[Entrega]:
-    """Garante que a camada de serviço opere sempre sobre a abstração Repositorio[Entrega]."""
-    if isinstance(entregas, dict):
-        return EntregaMemoryRepository(entregas)
-    return entregas
 
 
 class NaoEncontrado(ValueError):
@@ -119,16 +110,15 @@ def criar_pedido(
     produtos: list[dict],
     cliente_repo: Repositorio[Cliente],
     pedido_repo: Repositorio[Pedido],
-    entregas: Repositorio[Entrega] | dict[str, Entrega],
+    entregas: Repositorio[Entrega],
 ) -> str:
     consultar_cliente(cliente_id, cliente_repo)
     if not isinstance(produtos, list) or not produtos:
         raise ValueError("pedido deve conter ao menos um item")
     itens = [_montar_item(produto) for produto in produtos]
     pedido = Pedido(cliente=cliente_id, itens=itens)
-    entrega_repo = _obter_entrega_repo(entregas)
     pedido_repo.add(pedido)
-    entrega_repo.add(Entrega(pedido_id=pedido.id))
+    entregas.add(Entrega(pedido_id=pedido.id))
     return pedido.id
 
 
@@ -150,10 +140,9 @@ def listar_pedidos_do_cliente(
 
 def consultar_status_entrega(
     pedido_id: str,
-    entregas: Repositorio[Entrega] | dict[str, Entrega],
+    entregas: Repositorio[Entrega],
 ) -> str:
-    entrega_repo = _obter_entrega_repo(entregas)
-    entrega = entrega_repo.get(pedido_id)
+    entrega = entregas.get(pedido_id)
     if entrega is None:
         raise NaoEncontrado("entrega não encontrada")
     return entrega.status
@@ -162,10 +151,9 @@ def consultar_status_entrega(
 def atualizar_status_entrega(
     pedido_id: str,
     novo_status: str,
-    entregas: Repositorio[Entrega] | dict[str, Entrega],
+    entregas: Repositorio[Entrega],
 ) -> str:
-    entrega_repo = _obter_entrega_repo(entregas)
-    entrega = entrega_repo.get(pedido_id)
+    entrega = entregas.get(pedido_id)
     if entrega is None:
         raise NaoEncontrado("entrega não encontrada")
     if not isinstance(novo_status, str):
@@ -174,5 +162,5 @@ def atualizar_status_entrega(
     if status_normalizado not in STATUS_ENTREGA:
         raise ValueError(f"status inválido; use um de: {', '.join(STATUS_ENTREGA)}")
     entrega_atualizada = Entrega(pedido_id=pedido_id, status=status_normalizado)
-    entrega_repo.add(entrega_atualizada)
+    entregas.add(entrega_atualizada)
     return entrega_atualizada.status

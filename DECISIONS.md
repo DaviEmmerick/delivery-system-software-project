@@ -362,9 +362,9 @@ Arquivos Markdown:
 
 #### O que implementei
 
-- Refatorei a camada de serviço (`src/service_layer/services.py`) e o entrypoint Flask (`src/entrypoints/flask_app.py`) aplicando o **Princípio da Inversão de Dependência (DIP)**, declarando o protocolo abstrato `Repositorio[T]` diretamente na camada de serviço (eliminando a importação de `src.adapters.repository`) e encapsulando o armazenamento de entregas em `EntregaMemoryRepository` sob o contrato `add` / `get` / `list`.
-- Atualizei e ampliei as suítes `tests/unit/test_services.py` e `tests/e2e/test_api.py` com novos testes validando o protocolo `Repositorio[Entrega]`, a injeção de `EntregaMemoryRepository` em `create_app()` e a retrocompatibilidade com dicionários legados.
-- Documentei a violação de DIP, o código anterior (`937bad5` e `1213e36`), a refatoração, a preservação de comportamento e a análise de custos em `docs/solid.md`.
+- Refatorei a camada de serviço (`src/service_layer/services.py`) e o entrypoint Flask (`src/entrypoints/flask_app.py`) aplicando o **Princípio da Inversão de Dependência (DIP)**, declarando o protocolo abstrato `Repositorio[T]` diretamente na camada de serviço (eliminando a dependência estática de `src.adapters.repository`) e unificando o acesso a entregas exclusivamente por meio do contrato `Repositorio[Entrega]` com a implementação em memória `EntregaMemoryRepository` (`add` / `get` / `list`).
+- Atualizei e ampliei as suítes `tests/unit/test_services.py` e `tests/e2e/test_api.py` com 2 novos testes validando o protocolo `Repositorio[Entrega]` e a injeção de `EntregaMemoryRepository` em `create_app()`.
+- Documentei a violação de DIP, o código anterior (`937bad5` e `1213e36`), a refatoração, a justificativa arquitetural de localização de `EntregaMemoryRepository`, a preservação de comportamento e a análise de custos em `docs/solid.md`.
 
 #### Arquivos alterados
 
@@ -378,12 +378,12 @@ Arquivos Markdown:
 #### Commits relevantes
 
 - Código anterior (Fase 1, antes de 06/10/2026): `e4ecb22`, `937bad5` e `1213e36`.
-- Commit próprio com a refatoração e testes (Checkpoint 2): `46cdb65` — `[Refactor] Aplica DIP na camada de servicos e repositorio de entregas`.
+- Commits próprios deste Checkpoint 2: `46cdb65` (`[Refactor] Aplica DIP na camada de servicos e repositorio de entregas`), `fdc3558` (`[Docs] Documenta refatoracao DIP em solid.md e autorrelato do Checkpoint 2`) e commit de refinamento removendo o fallback de dicionário.
 
 #### Decisão de projeto
 
-- Definir o protocolo `Repositorio[T]` na própria camada de serviço (`src/service_layer/services.py`) e padronizar o acesso a `Entrega` via `EntregaMemoryRepository` (mantendo adaptação transparente em `_obter_entrega_repo` para chamadas que passem `dict`), garantindo que os casos de uso dependam apenas de abstrações da camada de serviço sem quebrar nenhum teste existente.
+- Definir o protocolo `Repositorio[T]` na própria camada de serviço (`src/service_layer/services.py`) e exigir que os casos de uso de pedido e entrega operem exclusivamente sobre `Repositorio[Entrega]` (sem união com `dict[str, Entrega]`), mantendo `EntregaMemoryRepository` junto ao protocolo por não possuir dependências de infraestrutura ou ORM e por preservar o escopo de arquivos do integrante.
 
 #### Uso de IA
 
-- Utilizei o assistente de IA (Antigravity / Gemini) para analisar os requisitos do Checkpoint 2 no PDF da Fase 2, identificar a violação do Princípio da Inversão de Dependência (DIP) nos módulos sob minha responsabilidade (`src/service_layer/services.py` e `src/entrypoints/flask_app.py`), estruturar a refatoração com `Repositorio[T]` e `EntregaMemoryRepository` e revisar a documentação em `docs/solid.md` e neste autorrelato. Todo o código e documentação foram revisados e validados contra os requisitos do trabalho.
+- Utilizei o assistente de IA (Gemini) para  identificar a violação do Princípio da Inversão de Dependência (DIP) nos módulos sob minha responsabilidade (`src/service_layer/services.py` e `src/entrypoints/flask_app.py`), estruturar a refatoração com `Repositorio[T]` e `EntregaMemoryRepository` no código e nos testes e revisar a documentação em `docs/solid.md` e neste autorrelato. Todo o código e documentação foram revisados e validados contra os requisitos do trabalho.
