@@ -116,3 +116,98 @@ Todos os 33 cenários unitários existentes em `tests/unit/test_services.py` e o
 ### Custo
 
 A refatoração acrescentou o protocolo `Repositorio[T]` e a classe `EntregaMemoryRepository` em `src/service_layer/services.py` (cerca de 28 linhas adicionais e um nível extra de indireção no acesso às entregas). Esse custo compensa porque elimina a dependência da camada de serviços em relação a `src.adapters.repository`, padroniza todos os agregados sob o mesmo contrato abstrato (`add`/`get`/`list`) e permite injetar uma futura implementação persistente de `Repositorio[Entrega]` sem alterar a lógica de orquestração dos casos de uso.
+
+## Leandro Machado Cardoso da Cunha - Mapeamento de Restaurante
+
+### Princípio e situação anterior
+
+**Princípio da Substituição de Liskov (LSP).** No adapter criado no commit
+`ac665e3`, o `RestauranteRepository` implementava o contrato de repositório,
+mas o mapeamento persistia somente o `id` e o `nome` de `Restaurante`:
+
+```python
+def _to_model(self, entity: Restaurante) -> RestauranteModel:
+     return RestauranteModel(id=entity.id, nome=entity.nome)
+
+def _to_entity(self, model: RestauranteModel) -> Restaurante:
+     return Restaurante(model.nome, id=model.id)
+```
+
+A entidade `Restaurante`, entretanto, também possui a coleção
+`produtos`. Portanto, o fluxo abaixo não preservava o estado da entidade:
+
+```python
+restaurante = Restaurante(
+     "Pizzaria",
+     produtos=[Produto("Pizza", 40.0)],
+)
+restaurante_repo.add(restaurante)
+recuperado = restaurante_repo.get(restaurante.id)
+```
+
+O objeto original possuía um produto, mas `recuperado.produtos` era uma lista
+vazia. Isso representava um risco de LSP porque um cliente que dependesse do
+contrato `AbstractRepository[Restaurante]` poderia substituir uma implementação
+em memória por `RestauranteRepository` sem mudar seu código, mas obteria
+resultados diferentes. O repositório em memória preservava o objeto completo,
+enquanto o adapter SQLAlchemy perdia parte do estado durante o round-trip
+`add()`/`get()`.
+
+O contrato abstrato não declarava formalmente a regra de round-trip, mas os
+métodos `add()` e `get()` criavam a expectativa de que uma entidade salva
+pudesse ser recuperada sem perda dos seus dados. Essa diferença poderia causar
+falhas em regras, cálculos, listagens ou respostas que utilizassem o catálogo
+de produtos do restaurante. A mudança de requisito que expôs o problema foi a
+necessidade plausível de persistir e consultar os produtos associados ao
+restaurante, já que o serviço já aceitava produtos e a entidade já os mantinha.
+
+- **Código anterior:** `ac665e3`, commit que introduziu o adapter e o
+  mapeamento inicial de `Restaurante`.
+- **Código após a refatoração:** hash do commit autoral desta correção a
+  preencher após o commit.
+- **Arquivos alterados:** `src/adapters/orm.py`,
+  `src/adapters/repository.py` e `tests/integration/test_repositories.py`.
+
+### Refatoração
+
+1. **Persistência dos produtos:** foi criado `RestauranteProdutoModel` em
+    `src/adapters/orm.py`, armazenando nome, preço e posição de cada produto.
+2. **Relacionamento ORM:** `RestauranteModel` passou a possuir um
+    relacionamento um-para-muitos com `RestauranteProdutoModel`, com
+    `cascade="all, delete-orphan"` e ordenação pela posição original.
+3. **Mapeamento de saída:** `RestauranteRepository._to_model()` passou a
+    converter todos os `Produto` da entidade em modelos ORM.
+4. **Mapeamento de entrada:** `RestauranteRepository._to_entity()` passou a
+    reconstruir os objetos `Produto` e entregá-los ao construtor de
+    `Restaurante`.
+
+Com isso, as implementações em memória e SQLAlchemy preservam o mesmo estado
+observável da entidade após o armazenamento e a recuperação.
+
+### Preservação do comportamento
+
+Foi adicionado o teste
+`test_restaurante_repository_preserva_produtos_no_round_trip`, em
+`tests/integration/test_repositories.py`. O teste salva um restaurante com dois
+produtos e verifica que `get()` preserva o identificador, o nome, os nomes, os
+preços e a ordem dos produtos. O teste específico passou com resultado `1
+passed`.
+
+A alteração não modificou o contrato HTTP existente. A suíte executada sem o
+arquivo antigo `tests/unit/test_pedido.py` teve `136 passed`. A suíte completa
+teve `143 passed` e `8 failed`; as falhas estão concentradas no teste antigo de
+`Pedido`, que ainda espera que a entidade aceite `Produto` diretamente, embora
+a implementação atual use `ItemPedido` e `PedidoFactory`. Não houve falha
+relacionada ao mapeamento de `Restaurante`.
+
+### Custo
+
+A refatoração acrescentou um modelo ORM, um relacionamento, conversões
+adicionais no adapter e um teste de integração. Também aumentou a quantidade de
+dados persistidos e a complexidade do mapeamento, pois agora o repositório
+precisa manter os produtos associados ao restaurante.
+
+Esse custo compensa porque elimina a perda silenciosa de estado, mantém o
+comportamento esperado entre implementações substituíveis do repositório e
+permite atender à evolução natural do requisito de consultar produtos de um
+restaurante sem criar tratamento especial para o adapter SQLAlchemy.
