@@ -97,4 +97,5 @@ Para o domínio atual, manteríamos a arquitetura em camadas, pois as regras de 
   - `docs/adr/0001-modelagem-dos-agregados-de-dominio.md` (Davi França): composição de `Cliente`/`Endereco` e `Pedido`/`ItemPedido` imutáveis no domínio (`6b53d71`, `d058f44`).
   - `docs/adr/0002-Regras-de-negocio.md` (Leandro Machado): validação estrita de tipos e invariantes nas entidades com `ValueError` (`cb7d31a`, `7875dc1`, `ca6d033`, `1213e36`).
   - `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md` (Victor Antunes): isolamento da Service Layer com injeção explícita de repositórios, `FakeRepository` e tratamento de erros no entrypoint Flask (`9849b96`, `ab5eec4`, `e4ecb22`, `937bad5`).
+  - `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md` (João Gabriel de Azevedo): estratégia de testabilidade com testes unitários isolados no domínio puro, validação exaustiva de invariantes e imutabilidade com pytest (`b87b6fb`, `ea8cb1d`, `436a8ab`, `299b640`, `e8f972c`).
 - **Integração Contínua (`41cd01f`):** o workflow `.github/workflows/ci.yml` executa o `pytest` automaticamente em cada push e pull request na branch `main` usando Ubuntu e Python 3.12.

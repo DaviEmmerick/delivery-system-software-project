@@ -387,3 +387,28 @@ Arquivos Markdown:
 #### Uso de IA
 
 - Utilizei o assistente de IA (Gemini) para  identificar a violação do Princípio da Inversão de Dependência (DIP) nos módulos sob minha responsabilidade (`src/service_layer/services.py` e `src/entrypoints/flask_app.py`), estruturar a refatoração com `Repositorio[T]` e `EntregaMemoryRepository` no código e nos testes e revisar a documentação em `docs/solid.md` e neste autorrelato. Todo o código e documentação foram revisados e validados contra os requisitos do trabalho.
+### João Gabriel de Azevedo
+
+#### O que implementei - Referente ao Check Point parte 1 - 22/10
+
+- Elaborei o ADR `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`, documentando formalmente a decisão arquitetural da estratégia de testabilidade com testes unitários isolados no domínio puro, validação exaustiva de invariantes com parametrização do pytest e testes explícitos de imutabilidade e igualdade por valor em Value Objects.
+- Registrei a referência ao ADR 0004 no documento `docs/arquitetura.md` (Seção 6), complementando as evidências de rastreabilidade das decisões do grupo.
+
+#### Arquivos alterados
+
+- `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`
+- `docs/arquitetura.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- Commits da decisão arquitetural documentada no ADR (Fase 1 e evolução): `b87b6fb`, `ea8cb1d`, `436a8ab`, `299b640`, `e8f972c`, `183a70f`, `4569297`, `67deecd`, `eb71869` e `13560d5`
+- Commits deste Checkpoint 1 (Fase 2): criação de `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`, atualização de `docs/arquitetura.md` e atualização de `DECISIONS.md`
+
+#### Decisão de projeto
+
+- Adotar uma suíte de testes unitários isolados para o domínio puro (`tests/unit/`) com pytest parametrizado, exercitando exaustivamente invariantes e casos de borda em POPOs sem acoplamento a frameworks (Flask/SQLAlchemy), assegurando feedback na ordem de microssegundos e documentação executável das regras de negócio.
+
+#### Uso de IA
+
+- Utilizei assistente de IA para auxiliar na estruturação e revisão do ADR `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md` e na organização deste autorrelato, com base nas implementações de testes unitários e configurações de ambiente realizadas no projeto.
