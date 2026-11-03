@@ -5,7 +5,13 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
-from src.adapters.orm import ClienteModel, PedidoItemModel, PedidoModel, RestauranteModel
+from src.adapters.orm import (
+    ClienteModel,
+    PedidoItemModel,
+    PedidoModel,
+    RestauranteModel,
+    RestauranteProdutoModel,
+)
 from src.domain.entities.cliente import Cliente
 from src.domain.entities.endereco import Endereco
 from src.domain.entities.item_pedido import ItemPedido
@@ -84,10 +90,25 @@ class RestauranteRepository(SQLAlchemyRepository[Restaurante]):
     model_type = RestauranteModel
 
     def _to_model(self, entity: Restaurante) -> RestauranteModel:
-        return RestauranteModel(id=entity.id, nome=entity.nome)
+        return RestauranteModel(
+            id=entity.id,
+            nome=entity.nome,
+            produtos=[
+                RestauranteProdutoModel(
+                    posicao=position,
+                    nome=produto.nome,
+                    preco=produto.preco,
+                )
+                for position, produto in enumerate(entity.produtos)
+            ],
+        )
 
     def _to_entity(self, model: RestauranteModel) -> Restaurante:
-        return Restaurante(model.nome, id=model.id)
+        produtos = [
+            Produto(produto.nome, float(produto.preco))
+            for produto in model.produtos
+        ]
+        return Restaurante(model.nome, id=model.id, produtos=produtos)
 
 
 class PedidoRepository(SQLAlchemyRepository[Pedido]):
