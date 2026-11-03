@@ -1,43 +1,87 @@
 from __future__ import annotations
 import math
-from typing import TYPE_CHECKING
+from typing import Protocol, TypeVar, runtime_checkable
 from src.domain.model import Cliente, Endereco, Entrega, ItemPedido, Pedido, Produto, Restaurante
 
-if TYPE_CHECKING: 
-    from src.adapters.repository import AbstractRepository
+T = TypeVar("T")
+
 STATUS_ENTREGA = ("pendente", "em_transito", "entregue", "cancelada")
+
+
+@runtime_checkable
+class Repositorio(Protocol[T]):
+    """Contrato abstrato de repositório definido pela própria camada de serviço (DIP)."""
+
+    def add(self, entity: T) -> None:
+        ...
+
+    def get(self, entity_id: str) -> T | None:
+        ...
+
+    def list(self) -> list[T]:
+        ...
+
+
+class EntregaMemoryRepository:
+    """Implementação em memória do contrato Repositorio[Entrega] indexada por pedido_id."""
+
+    def __init__(self, dados: dict[str, Entrega] | None = None):
+        self._dados: dict[str, Entrega] = dados if dados is not None else {}
+
+    def add(self, entity: Entrega) -> None:
+        self._dados[entity.pedido_id] = entity
+
+    def get(self, entity_id: str) -> Entrega | None:
+        return self._dados.get(entity_id)
+
+    def list(self) -> list[Entrega]:
+        return list(self._dados.values())
+
+
+def _obter_entrega_repo(
+    entregas: Repositorio[Entrega] | dict[str, Entrega],
+) -> Repositorio[Entrega]:
+    """Garante que a camada de serviço opere sempre sobre a abstração Repositorio[Entrega]."""
+    if isinstance(entregas, dict):
+        return EntregaMemoryRepository(entregas)
+    return entregas
+
 
 class NaoEncontrado(ValueError):
     """Recurso pedido não existe (a API responde 404)."""
 
+
 class Conflito(ValueError):
     """Operação viola uma unicidade, ex.: telefone já cadastrado (a API responde 409)."""
+
 
 def criar_cliente(
     nome: str,
     telefone: str,
     rua: str | None,
     numero: str | None,
-    cliente_repo: AbstractRepository,
+    cliente_repo: Repositorio[Cliente],
 ) -> str:
     endereco = None
     if rua is not None or numero is not None:
-        endereco = Endereco(rua=rua, numero=numero) 
+        endereco = Endereco(rua=rua, numero=numero)
     cliente = Cliente(nome=nome, telefone=telefone, endereco=endereco)
     if any(existente.telefone == cliente.telefone for existente in cliente_repo.list()):
         raise Conflito("telefone já cadastrado")
     cliente_repo.add(cliente)
     return cliente.id
 
-def consultar_cliente(cliente_id: str, cliente_repo: AbstractRepository) -> Cliente:
+
+def consultar_cliente(cliente_id: str, cliente_repo: Repositorio[Cliente]) -> Cliente:
     cliente = cliente_repo.get(cliente_id)
     if cliente is None:
         raise NaoEncontrado("cliente não encontrado")
     return cliente
 
+
 def criar_restaurante(
     nome: str,
-    restaurante_repo: AbstractRepository,
+    restaurante_repo: Repositorio[Restaurante],
     produtos: list[dict] | None = None,
 ) -> str:
     if produtos is not None and not isinstance(produtos, list):
@@ -49,8 +93,10 @@ def criar_restaurante(
     restaurante_repo.add(restaurante)
     return restaurante.id
 
-def listar_restaurantes(restaurante_repo: AbstractRepository) -> list[Restaurante]:
+
+def listar_restaurantes(restaurante_repo: Repositorio[Restaurante]) -> list[Restaurante]:
     return restaurante_repo.list()
+
 
 def _montar_produto(dado) -> Produto:
     if not isinstance(dado, dict):
@@ -67,44 +113,59 @@ def _montar_item(dado) -> ItemPedido:
     produto = _montar_produto(dado)
     return ItemPedido(produto, quantidade=dado.get("quantidade", 1))
 
+
 def criar_pedido(
     cliente_id: str,
     produtos: list[dict],
-    cliente_repo: AbstractRepository,
-    pedido_repo: AbstractRepository,
-    entregas: dict[str, Entrega],
+    cliente_repo: Repositorio[Cliente],
+    pedido_repo: Repositorio[Pedido],
+    entregas: Repositorio[Entrega] | dict[str, Entrega],
 ) -> str:
-    consultar_cliente(cliente_id, cliente_repo)  
+    consultar_cliente(cliente_id, cliente_repo)
     if not isinstance(produtos, list) or not produtos:
         raise ValueError("pedido deve conter ao menos um item")
     itens = [_montar_item(produto) for produto in produtos]
-    pedido = Pedido(cliente=cliente_id, itens=itens)  
+    pedido = Pedido(cliente=cliente_id, itens=itens)
+    entrega_repo = _obter_entrega_repo(entregas)
     pedido_repo.add(pedido)
-    entregas[pedido.id] = Entrega(pedido_id=pedido.id)
+    entrega_repo.add(Entrega(pedido_id=pedido.id))
     return pedido.id
 
-def consultar_pedido(pedido_id: str, pedido_repo: AbstractRepository) -> Pedido:
+
+def consultar_pedido(pedido_id: str, pedido_repo: Repositorio[Pedido]) -> Pedido:
     pedido = pedido_repo.get(pedido_id)
     if pedido is None:
         raise NaoEncontrado("pedido não encontrado")
     return pedido
 
+
 def listar_pedidos_do_cliente(
     cliente_id: str,
-    cliente_repo: AbstractRepository,
-    pedido_repo: AbstractRepository,
+    cliente_repo: Repositorio[Cliente],
+    pedido_repo: Repositorio[Pedido],
 ) -> list[Pedido]:
     consultar_cliente(cliente_id, cliente_repo)
     return [pedido for pedido in pedido_repo.list() if pedido.cliente == cliente_id]
 
-def consultar_status_entrega(pedido_id: str, entregas: dict[str, Entrega]) -> str:
-    entrega = entregas.get(pedido_id)
+
+def consultar_status_entrega(
+    pedido_id: str,
+    entregas: Repositorio[Entrega] | dict[str, Entrega],
+) -> str:
+    entrega_repo = _obter_entrega_repo(entregas)
+    entrega = entrega_repo.get(pedido_id)
     if entrega is None:
         raise NaoEncontrado("entrega não encontrada")
     return entrega.status
 
-def atualizar_status_entrega(pedido_id: str, novo_status: str, entregas: dict[str, Entrega]) -> str:
-    entrega = entregas.get(pedido_id)
+
+def atualizar_status_entrega(
+    pedido_id: str,
+    novo_status: str,
+    entregas: Repositorio[Entrega] | dict[str, Entrega],
+) -> str:
+    entrega_repo = _obter_entrega_repo(entregas)
+    entrega = entrega_repo.get(pedido_id)
     if entrega is None:
         raise NaoEncontrado("entrega não encontrada")
     if not isinstance(novo_status, str):
@@ -113,5 +174,5 @@ def atualizar_status_entrega(pedido_id: str, novo_status: str, entregas: dict[st
     if status_normalizado not in STATUS_ENTREGA:
         raise ValueError(f"status inválido; use um de: {', '.join(STATUS_ENTREGA)}")
     entrega_atualizada = Entrega(pedido_id=pedido_id, status=status_normalizado)
-    entregas[pedido_id] = entrega_atualizada
+    entrega_repo.add(entrega_atualizada)
     return entrega_atualizada.status
