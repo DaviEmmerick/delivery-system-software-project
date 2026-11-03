@@ -302,6 +302,38 @@ Arquivos Markdown:
 
 - Usei um assistente de IA para extrair os requisitos do enunciado em PDF, examinar o repositório e preparar rascunhos da documentação. Revisei as evidências contra o código, o histórico e a suíte local; os integrantes responsáveis ainda precisam validar os ADRs atribuídos a eles e registrar sua própria autoria nos commits.
 
+## Parte 2 - checkpoint 2 (03/11/2026)
+
+### Davi França Emmerick de Souza
+
+#### O que implementei
+
+- Separei a normalização de `Produto` e `ItemPedido` da entidade `Pedido`, criando `PedidoFactory` e mantendo as invariantes do agregado na entidade.
+- Atualizei chamadas existentes dos testes unitários e de integração para usar a factory na criação de pedidos com `Produto`.
+- Documentei a violação de SRP, a refatoração, as evidências e os custos em `docs/solid.md`.
+
+#### Arquivos alterados
+
+- `src/domain/entities/pedido.py`
+- `src/domain/entities/pedido_factory.py`
+- `tests/unit/test_pedido.py`
+- `tests/integration/test_repositories.py`
+- `docs/solid.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- Código anterior: `d058f44` — `[Feat] Entidades`.
+- Commit próprio com a refatoração: a preencher depois de criar o commit.
+
+#### Decisão de projeto
+
+- Fazer `Pedido` aceitar somente `ItemPedido` normalizado e concentrar a conversão das formas de entrada em uma factory, separando a construção das invariantes do agregado.
+
+#### Uso de IA
+
+- Usei um assistente de IA para localizar a seção SOLID do enunciado, analisar o histórico e o agregado `Pedido`. Revisei a proposta contra a implementação e os testes do repositório.
+
 
 ### Victor Antunes dos Santos (@VictorAntunesCastro)
 
