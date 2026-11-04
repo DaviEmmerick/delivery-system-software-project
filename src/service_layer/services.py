@@ -9,17 +9,33 @@ STATUS_ENTREGA = ("pendente", "em_transito", "entregue", "cancelada")
 
 
 @runtime_checkable
-class Repositorio(Protocol[T]):
-    """Contrato abstrato de repositório definido pela própria camada de serviço (DIP)."""
-
-    def add(self, entity: T) -> None:
-        ...
+class LeitorRepositorio(Protocol[T]):
+    """Protocolo segregado para leitura pontual por identificador (ISP)."""
 
     def get(self, entity_id: str) -> T | None:
         ...
 
+
+@runtime_checkable
+class ListadorRepositorio(Protocol[T]):
+    """Protocolo segregado para listagem de coleções de entidades (ISP)."""
+
     def list(self) -> list[T]:
         ...
+
+
+@runtime_checkable
+class EscritorRepositorio(Protocol[T]):
+    """Protocolo segregado para adição/persistência de entidades (ISP)."""
+
+    def add(self, entity: T) -> None:
+        ...
+
+
+@runtime_checkable
+class Repositorio(LeitorRepositorio[T], ListadorRepositorio[T], EscritorRepositorio[T], Protocol[T]):
+    """Contrato abstrato completo de repositório composto pelas interfaces segregadas (ISP e DIP)."""
+    ...
 
 
 class EntregaMemoryRepository:
@@ -63,7 +79,7 @@ def criar_cliente(
     return cliente.id
 
 
-def consultar_cliente(cliente_id: str, cliente_repo: Repositorio[Cliente]) -> Cliente:
+def consultar_cliente(cliente_id: str, cliente_repo: LeitorRepositorio[Cliente]) -> Cliente:
     cliente = cliente_repo.get(cliente_id)
     if cliente is None:
         raise NaoEncontrado("cliente não encontrado")
@@ -85,7 +101,7 @@ def criar_restaurante(
     return restaurante.id
 
 
-def listar_restaurantes(restaurante_repo: Repositorio[Restaurante]) -> list[Restaurante]:
+def listar_restaurantes(restaurante_repo: ListadorRepositorio[Restaurante]) -> list[Restaurante]:
     return restaurante_repo.list()
 
 
@@ -108,9 +124,9 @@ def _montar_item(dado) -> ItemPedido:
 def criar_pedido(
     cliente_id: str,
     produtos: list[dict],
-    cliente_repo: Repositorio[Cliente],
-    pedido_repo: Repositorio[Pedido],
-    entregas: Repositorio[Entrega],
+    cliente_repo: LeitorRepositorio[Cliente],
+    pedido_repo: EscritorRepositorio[Pedido],
+    entregas: EscritorRepositorio[Entrega],
 ) -> str:
     consultar_cliente(cliente_id, cliente_repo)
     if not isinstance(produtos, list) or not produtos:
@@ -122,7 +138,7 @@ def criar_pedido(
     return pedido.id
 
 
-def consultar_pedido(pedido_id: str, pedido_repo: Repositorio[Pedido]) -> Pedido:
+def consultar_pedido(pedido_id: str, pedido_repo: LeitorRepositorio[Pedido]) -> Pedido:
     pedido = pedido_repo.get(pedido_id)
     if pedido is None:
         raise NaoEncontrado("pedido não encontrado")
@@ -131,8 +147,8 @@ def consultar_pedido(pedido_id: str, pedido_repo: Repositorio[Pedido]) -> Pedido
 
 def listar_pedidos_do_cliente(
     cliente_id: str,
-    cliente_repo: Repositorio[Cliente],
-    pedido_repo: Repositorio[Pedido],
+    cliente_repo: LeitorRepositorio[Cliente],
+    pedido_repo: ListadorRepositorio[Pedido],
 ) -> list[Pedido]:
     consultar_cliente(cliente_id, cliente_repo)
     return [pedido for pedido in pedido_repo.list() if pedido.cliente == cliente_id]
@@ -140,7 +156,7 @@ def listar_pedidos_do_cliente(
 
 def consultar_status_entrega(
     pedido_id: str,
-    entregas: Repositorio[Entrega],
+    entregas: LeitorRepositorio[Entrega],
 ) -> str:
     entrega = entregas.get(pedido_id)
     if entrega is None:

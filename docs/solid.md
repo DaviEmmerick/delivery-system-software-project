@@ -211,3 +211,63 @@ Esse custo compensa porque elimina a perda silenciosa de estado, mantém o
 comportamento esperado entre implementações substituíveis do repositório e
 permite atender à evolução natural do requisito de consultar produtos de um
 restaurante sem criar tratamento especial para o adapter SQLAlchemy.
+
+---
+
+## João Gabriel de Azevedo (@JoaoGAzevedo) — Segregação de Interfaces na Camada de Serviços (ISP)
+
+### Princípio e situação anterior
+
+**Princípio da Segregação de Interfaces (ISP).** No commit `46cdb65` (e refinamentos subsequentes do Checkpoint 2), a camada de serviço (`src/service_layer/services.py`) introduziu o protocolo abstrato `Repositorio[T]` para desacoplar a camada de serviço da implementação concreta de persistência.
+
+No entanto, o protocolo `Repositorio[T]` foi definido como uma interface monolítica contendo três operações distintas:
+
+```python
+@runtime_checkable
+class Repositorio(Protocol[T]):
+    def add(self, entity: T) -> None: ...
+    def get(self, entity_id: str) -> T | None: ...
+    def list(self) -> list[T]: ...
+```
+
+Isso gerava uma violação do **ISP** (*"Nenhum cliente deve ser forçado a depender de métodos que não utiliza"*):
+1. **Consumidores que realizam apenas leitura pontual:** os casos de uso `consultar_cliente(cliente_id, cliente_repo)`, `consultar_pedido(pedido_id, pedido_repo)` e `consultar_status_entrega(pedido_id, entregas)` utilizam exclusivamente o método `get(entity_id)`. Nenhum deles jamais chama `add()` ou `list()`.
+2. **Consumidores que realizam apenas listagem:** o caso de uso `listar_restaurantes(restaurante_repo)` utiliza exclusivamente `list()`, sem jamais acessar `get()` ou `add()`.
+3. **Consumidores que leem de uma fonte e escrevem em outra:** `criar_pedido` utiliza apenas `get()` do `cliente_repo` (via `consultar_cliente`) e `add()` em `pedido_repo` e `entregas`.
+
+### Problema concreto
+
+Ao forçar a tipagem monolítica `Repositorio[T]` em todas essas funções:
+- Dublês de teste (stubs e mocks) para testes unitários focados em consulta eram obrigados a implementar métodos inúteis (`add` e `list`), geralmente com implementações vazias ou `raise NotImplementedError`.
+- Adaptadores especializados (como uma réplica de leitura de banco de dados, um cliente de cache somente-leitura ou uma consulta de catálogo externo) não podiam ser passados diretamente para `consultar_cliente` ou `listar_restaurantes` sem violar LSP ou implementar métodos de escrita fictícios.
+- A intenção arquitetural de cada caso de uso ficava obscurecida na assinatura das funções: não era evidente se `consultar_cliente` poderia ou não mutar o repositório ou varrer a tabela inteira.
+
+### Refatoração
+
+Segregamos o contrato `Repositorio[T]` em papéis granulares (*role interfaces*) diretamente em `src/service_layer/services.py`:
+
+1. **Protocolo `LeitorRepositorio[T]`:** expõe exclusivamente `get(entity_id: str) -> T | None`.
+2. **Protocolo `ListadorRepositorio[T]`:** expõe exclusivamente `list() -> list[T]`.
+3. **Protocolo `EscritorRepositorio[T]`:** expõe exclusivamente `add(entity: T) -> None`.
+4. **Composição em `Repositorio[T]`:** compõe `LeitorRepositorio[T]`, `ListadorRepositorio[T]` e `EscritorRepositorio[T]`, preservando total compatibilidade com os repositórios completos existentes.
+5. **Ajuste das assinaturas das funções de serviço:**
+   - `consultar_cliente` recebe `cliente_repo: LeitorRepositorio[Cliente]`.
+   - `consultar_pedido` recebe `pedido_repo: LeitorRepositorio[Pedido]`.
+   - `consultar_status_entrega` recebe `entregas: LeitorRepositorio[Entrega]`.
+   - `listar_restaurantes` recebe `restaurante_repo: ListadorRepositorio[Restaurante]`.
+   - `listar_pedidos_do_cliente` recebe `cliente_repo: LeitorRepositorio[Cliente]` e `pedido_repo: ListadorRepositorio[Pedido]`.
+   - `criar_pedido` recebe `cliente_repo: LeitorRepositorio[Cliente]`, `pedido_repo: EscritorRepositorio[Pedido]` e `entregas: EscritorRepositorio[Entrega]`.
+
+- **Código anterior:** commits `46cdb65` e `5438f36`.
+- **Arquivos alterados:** `src/service_layer/services.py`, `tests/unit/test_services.py`, `docs/solid.md` e `DECISIONS.md`.
+
+### Preservação do comportamento
+
+A refatoração é 100% retrocompatível devido à tipagem estrutural (*structural subtyping / duck typing*) do Python `Protocol`:
+- Todos os repositórios existentes (`SQLAlchemyRepository`, `ClienteRepository`, `RestauranteRepository`, `PedidoRepository`, `EntregaMemoryRepository` e `FakeRepository`) já implementam `add`, `get` e `list`, portanto satisfazem simultaneamente os protocolos segregados e o protocolo composto `Repositorio`.
+- Todas as 34 funções de teste existentes em `tests/unit/test_services.py` continuaram passando sem nenhuma modificação necessária.
+- Foram adicionados 3 novos testes unitários específicos em `tests/unit/test_services.py` comprovando que dublês mínimos que implementam **apenas** `get()` ou **apenas** `list()` são aceitos e funcionam perfeitamente nos respectivos serviços, sem exigir métodos de escrita.
+
+### Custo
+
+O custo da refatoração é mínimo: adiciona 3 definições de protocolos leves em `src/service_layer/services.py` (~20 linhas de código). Em contrapartida, ganha-se expressividade nas assinaturas dos serviços, desacoplamento estrito entre consumidores e métodos não utilizados, e a capacidade de criar dublês de teste com o menor escopo possível.

@@ -176,3 +176,48 @@ def test_entrega_memory_repository_cumpre_protocolo_repositorio(cliente_repo, pe
 
     services.atualizar_status_entrega(pedido_id, "em_transito", entrega_repo)
     assert entrega_repo.get(pedido_id).status == "em_transito"
+
+
+def test_consultar_cliente_aceita_leitor_segregado_sem_metodos_add_ou_list():
+    cliente = services.Cliente(nome="Ana Lima", telefone="11999998888", id="cli-isp-1")
+
+    class StubLeitorCliente:
+        def get(self, entity_id: str):
+            return cliente if entity_id == cliente.id else None
+
+    stub = StubLeitorCliente()
+    assert isinstance(stub, services.LeitorRepositorio)
+    assert not isinstance(stub, services.Repositorio)
+
+    resultado = services.consultar_cliente("cli-isp-1", stub)
+    assert resultado == cliente
+
+
+def test_listar_restaurantes_aceita_listador_segregado_sem_metodos_add_ou_get():
+    restaurantes = [services.Restaurante(nome="Cantina ISP", id="rest-isp-1")]
+
+    class StubListadorRestaurante:
+        def list(self):
+            return restaurantes
+
+    stub = StubListadorRestaurante()
+    assert isinstance(stub, services.ListadorRepositorio)
+    assert not isinstance(stub, services.Repositorio)
+
+    resultado = services.listar_restaurantes(stub)
+    assert resultado == restaurantes
+
+
+def test_consultar_status_entrega_aceita_leitor_segregado():
+    entrega = services.Entrega(pedido_id="ped-isp-1", status="em_transito")
+
+    class StubLeitorEntrega:
+        def get(self, entity_id: str):
+            return entrega if entity_id == entrega.pedido_id else None
+
+    stub = StubLeitorEntrega()
+    assert isinstance(stub, services.LeitorRepositorio)
+    assert not isinstance(stub, services.Repositorio)
+
+    assert services.consultar_status_entrega("ped-isp-1", stub) == "em_transito"
+

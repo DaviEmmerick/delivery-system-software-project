@@ -328,6 +328,32 @@ Arquivos Markdown:
 
 - Utilizei o assistente de IA (Gemini) para revisar o docs/arquitetura.md em busca de lacunas em relação ao barema, me auxiliar na decisão arquitetural da camada de serviços e corrigir a redação do meu ADR (docs/adr/0003-camada-de-servico-e-entrypoint-flask.md) e deste autorrelato. Todo o texto foi baseado no código e nos testes que implementei na API Flask. Revisei e validei todo o conteúdo ajustado contra o código-fonte e a suíte de testes do repositório.
 
+### João Gabriel de Azevedo
+
+#### O que implementei
+
+- Elaborei o ADR `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`, documentando formalmente a decisão arquitetural da estratégia de testabilidade com testes unitários isolados no domínio puro, validação exaustiva de invariantes com parametrização do pytest e testes explícitos de imutabilidade e igualdade por valor em Value Objects.
+- Registrei a referência ao ADR 0004 no documento `docs/arquitetura.md` (Seção 6), complementando as evidências de rastreabilidade das decisões do grupo.
+
+#### Arquivos alterados
+
+- `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`
+- `docs/arquitetura.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- Commits da decisão arquitetural documentada no ADR (Fase 1 e evolução): `b87b6fb`, `ea8cb1d`, `436a8ab`, `299b640`, `e8f972c`, `183a70f`, `4569297`, `67deecd`, `eb71869` e `13560d5`
+- Commits deste Checkpoint 1 (Fase 2): criação de `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`, atualização de `docs/arquitetura.md` e atualização de `DECISIONS.md`
+
+#### Decisão de projeto
+
+- Adotar uma suíte de testes unitários isolados para o domínio puro (`tests/unit/`) com pytest parametrizado, exercitando exaustivamente invariantes e casos de borda em POPOs sem acoplamento a frameworks (Flask/SQLAlchemy), assegurando feedback na ordem de microssegundos e documentação executável das regras de negócio.
+
+#### Uso de IA
+
+- Utilizei assistente de IA para auxiliar na estruturação e revisão do ADR `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md` e na organização deste autorrelato, com base nas implementações de testes unitários e configurações de ambiente realizadas no projeto.
+
 ## Parte 2 - checkpoint 2 (03/11/2026)
 
 ### Davi França Emmerick de Souza
@@ -387,28 +413,35 @@ Arquivos Markdown:
 #### Uso de IA
 
 - Utilizei o assistente de IA (Gemini) para  identificar a violação do Princípio da Inversão de Dependência (DIP) nos módulos sob minha responsabilidade (`src/service_layer/services.py` e `src/entrypoints/flask_app.py`), estruturar a refatoração com `Repositorio[T]` e `EntregaMemoryRepository` no código e nos testes e revisar a documentação em `docs/solid.md` e neste autorrelato. Todo o código e documentação foram revisados e validados contra os requisitos do trabalho.
-### João Gabriel de Azevedo
 
-#### O que implementei - Referente ao Check Point parte 1 - 22/10
+### João Gabriel de Azevedo 
 
-- Elaborei o ADR `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`, documentando formalmente a decisão arquitetural da estratégia de testabilidade com testes unitários isolados no domínio puro, validação exaustiva de invariantes com parametrização do pytest e testes explícitos de imutabilidade e igualdade por valor em Value Objects.
-- Registrei a referência ao ADR 0004 no documento `docs/arquitetura.md` (Seção 6), complementando as evidências de rastreabilidade das decisões do grupo.
+
+
+#### O que implementei
+
+- Refatorei o contrato de repositório da camada de serviço (`src/service_layer/services.py`) aplicando o **Princípio da Segregação de Interfaces (ISP)**, dividindo o protocolo monolítico `Repositorio[T]` em papéis granulares e coesos: `LeitorRepositorio[T]` (leitura pontual por ID), `ListadorRepositorio[T]` (listagem de coleções) e `EscritorRepositorio[T]` (adição/persistência).
+- Recompus o protocolo completo `Repositorio[T]` através da herança múltipla dos protocolos segregados (`LeitorRepositorio`, `ListadorRepositorio` e `EscritorRepositorio`), assegurando 100% de compatibilidade estrutural retroativa com os repositórios existentes (`SQLAlchemyRepository`, `ClienteRepository`, `RestauranteRepository`, `PedidoRepository`, `EntregaMemoryRepository` e `FakeRepository`).
+- Atualizei as assinaturas das funções de caso de uso em `src/service_layer/services.py` para dependerem estritamente da interface mínima necessária (`consultar_cliente`, `consultar_pedido` e `consultar_status_entrega` dependem de `LeitorRepositorio`; `listar_restaurantes` depende de `ListadorRepositorio`; `listar_pedidos_do_cliente` e `criar_pedido` dependem dos papéis específicos de leitura e escrita).
+- Adicionei 3 novos testes unitários em `tests/unit/test_services.py` comprovando que dublês parciais (que implementam somente `get` ou somente `list`) funcionam perfeitamente nos serviços, sem necessidade de implementar métodos não utilizados.
+- Documentei detalhadamente a violação de ISP, a refatoração, a preservação de comportamento e os custos no arquivo `docs/solid.md`.
 
 #### Arquivos alterados
 
-- `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`
-- `docs/arquitetura.md`
+- `src/service_layer/services.py`
+- `tests/unit/test_services.py`
+- `docs/solid.md`
 - `DECISIONS.md`
 
 #### Commits relevantes
 
-- Commits da decisão arquitetural documentada no ADR (Fase 1 e evolução): `b87b6fb`, `ea8cb1d`, `436a8ab`, `299b640`, `e8f972c`, `183a70f`, `4569297`, `67deecd`, `eb71869` e `13560d5`
-- Commits deste Checkpoint 1 (Fase 2): criação de `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`, atualização de `docs/arquitetura.md` e atualização de `DECISIONS.md`
+- Código anterior: `46cdb65` e `5438f36`.
+- Commit próprio com a refatoração ISP: a preencher após o commit das alterações.
 
 #### Decisão de projeto
 
-- Adotar uma suíte de testes unitários isolados para o domínio puro (`tests/unit/`) com pytest parametrizado, exercitando exaustivamente invariantes e casos de borda em POPOs sem acoplamento a frameworks (Flask/SQLAlchemy), assegurando feedback na ordem de microssegundos e documentação executável das regras de negócio.
+- Segregar a abstração de repositório na camada de serviços em protocolos de papéis específicos (`LeitorRepositorio`, `ListadorRepositorio`, `EscritorRepositorio`) e manter `Repositorio` como a composição desses protocolos, garantindo que consumidores de leitura não sejam forçados a depender de operações de escrita ou varredura de coleções (ISP) e permitindo dublês de teste mais leves e expressivos.
 
 #### Uso de IA
 
-- Utilizei assistente de IA para auxiliar na estruturação e revisão do ADR `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md` e na organização deste autorrelato, com base nas implementações de testes unitários e configurações de ambiente realizadas no projeto.
+- Utilizei assistente de IA para auxiliar na análise das interfaces da camada de serviços perante o Princípio da Segregação de Interfaces (ISP), na estruturação dos protocolos segregados e na elaboração da documentação em `docs/solid.md` e neste autorrelato.
