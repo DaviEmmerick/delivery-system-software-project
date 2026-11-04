@@ -1,5 +1,6 @@
 import pytest
 from src.entrypoints.flask_app import create_app
+from src.service_layer.services import EntregaMemoryRepository
 
 @pytest.fixture
 def client():
@@ -171,3 +172,16 @@ def test_rota_inexistente_retorna_404_em_json(client):
     resposta = client.get("/rota-que-nao-existe")
     assert resposta.status_code == 404
     assert "erro" in resposta.json
+
+
+def test_create_app_aceita_repositorio_de_entrega_injetado():
+    entrega_repo = EntregaMemoryRepository()
+    app = create_app(entregas=entrega_repo)
+    app.config["TESTING"] = True
+    with app.test_client() as client:
+        cliente_id = _criar_cliente(client)
+        pedido_id = _criar_pedido(client, cliente_id)
+        assert entrega_repo.get(pedido_id).status == "pendente"
+        resposta = client.patch(f"/pedidos/{pedido_id}/entrega", json={"status": "entregue"})
+        assert resposta.status_code == 200
+        assert entrega_repo.get(pedido_id).status == "entregue"

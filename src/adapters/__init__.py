@@ -1,0 +1,1 @@
+"""Adaptadores de persistência e integração externa."""

@@ -23,6 +23,24 @@ class RestauranteModel(Base):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
     nome: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
+    produtos: Mapped[list["RestauranteProdutoModel"]] = relationship(
+        back_populates="restaurante",
+        cascade="all, delete-orphan",
+        order_by="RestauranteProdutoModel.posicao",
+    )
+
+
+class RestauranteProdutoModel(Base):
+    __tablename__ = "restaurante_produtos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    restaurante_id: Mapped[str] = mapped_column(
+        ForeignKey("restaurantes.id", ondelete="CASCADE")
+    )
+    posicao: Mapped[int] = mapped_column(Integer, nullable=False)
+    nome: Mapped[str] = mapped_column(String(200), nullable=False)
+    preco: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    restaurante: Mapped[RestauranteModel] = relationship(back_populates="produtos")
 
 
 class PedidoModel(Base):

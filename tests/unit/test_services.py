@@ -30,7 +30,7 @@ def pedido_repo():
 
 @pytest.fixture
 def entregas():
-    return {}
+    return services.EntregaMemoryRepository()
 
 
 def _cliente(cliente_repo, nome="Ana", telefone="21999999999"):
@@ -98,7 +98,7 @@ def test_criar_pedido_para_cliente_inexistente_nao_persiste_nada(cliente_repo, p
     with pytest.raises(services.NaoEncontrado):
         services.criar_pedido("fantasma", [{"nome": "X", "preco": 1}], cliente_repo, pedido_repo, entregas)
     assert pedido_repo.list() == []
-    assert entregas == {}
+    assert entregas.list() == []
 
 
 @pytest.mark.parametrize(
@@ -121,7 +121,7 @@ def test_criar_pedido_com_produtos_invalidos_levanta_value_error(produtos, clien
     with pytest.raises(ValueError):
         services.criar_pedido(cliente_id, produtos, cliente_repo, pedido_repo, entregas)
     assert pedido_repo.list() == []
-    assert entregas == {}
+    assert entregas.list() == []
 
 def test_consultar_pedido_inexistente_levanta_nao_encontrado(pedido_repo):
     with pytest.raises(services.NaoEncontrado):
@@ -163,3 +163,61 @@ def test_atualizar_status_entrega_rejeita_status_invalido(status, cliente_repo, 
 def test_atualizar_status_de_entrega_inexistente_levanta_nao_encontrado(entregas):
     with pytest.raises(services.NaoEncontrado):
         services.atualizar_status_entrega("nao-existe", "entregue", entregas)
+
+
+def test_entrega_memory_repository_cumpre_protocolo_repositorio(cliente_repo, pedido_repo):
+    entrega_repo = services.EntregaMemoryRepository()
+    assert isinstance(entrega_repo, services.Repositorio)
+
+    cliente_id = _cliente(cliente_repo)
+    pedido_id = _pedido(cliente_id, cliente_repo, pedido_repo, entrega_repo)
+    assert len(entrega_repo.list()) == 1
+    assert entrega_repo.get(pedido_id).status == "pendente"
+
+    services.atualizar_status_entrega(pedido_id, "em_transito", entrega_repo)
+    assert entrega_repo.get(pedido_id).status == "em_transito"
+
+
+def test_consultar_cliente_aceita_leitor_segregado_sem_metodos_add_ou_list():
+    cliente = services.Cliente(nome="Ana Lima", telefone="11999998888", id="cli-isp-1")
+
+    class StubLeitorCliente:
+        def get(self, entity_id: str):
+            return cliente if entity_id == cliente.id else None
+
+    stub = StubLeitorCliente()
+    assert isinstance(stub, services.LeitorRepositorio)
+    assert not isinstance(stub, services.Repositorio)
+
+    resultado = services.consultar_cliente("cli-isp-1", stub)
+    assert resultado == cliente
+
+
+def test_listar_restaurantes_aceita_listador_segregado_sem_metodos_add_ou_get():
+    restaurantes = [services.Restaurante(nome="Cantina ISP", id="rest-isp-1")]
+
+    class StubListadorRestaurante:
+        def list(self):
+            return restaurantes
+
+    stub = StubListadorRestaurante()
+    assert isinstance(stub, services.ListadorRepositorio)
+    assert not isinstance(stub, services.Repositorio)
+
+    resultado = services.listar_restaurantes(stub)
+    assert resultado == restaurantes
+
+
+def test_consultar_status_entrega_aceita_leitor_segregado():
+    entrega = services.Entrega(pedido_id="ped-isp-1", status="em_transito")
+
+    class StubLeitorEntrega:
+        def get(self, entity_id: str):
+            return entrega if entity_id == entrega.pedido_id else None
+
+    stub = StubLeitorEntrega()
+    assert isinstance(stub, services.LeitorRepositorio)
+    assert not isinstance(stub, services.Repositorio)
+
+    assert services.consultar_status_entrega("ped-isp-1", stub) == "em_transito"
+

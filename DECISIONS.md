@@ -302,6 +302,58 @@ Arquivos Markdown:
 
 - Usei um assistente de IA para extrair os requisitos do enunciado em PDF, examinar o repositório e preparar rascunhos da documentação. Revisei as evidências contra o código, o histórico e a suíte local; os integrantes responsáveis ainda precisam validar os ADRs atribuídos a eles e registrar sua própria autoria nos commits.
 
+### Victor Antunes dos Santos (@VictorAntunesCastro)
+
+#### O que implementei
+
+- Elaborei o ADR `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md`, documentando a decisão de isolar a camada de serviços (`src/service_layer/services.py`) do entrypoint HTTP (`src/entrypoints/flask_app.py`) por meio da injeção explícita de repositórios (`AbstractRepository` / `FakeRepository`) e do tratamento centralizado de exceções no Flask.
+- Revisei e complementei o documento `docs/arquitetura.md`, adicionando explicitamente as restrições arquiteturais do projeto (Seção 2), detalhando o papel do `FakeRepository` e o mapeamento de erros HTTP na tabela de componentes (Seção 3) e incluindo nas evidências (Seção 6) o comparativo real de desempenho entre a suíte unitária (`114` testes em `~0,14 s`) e a suíte E2E (`34` testes em `~0,32 s`), além da referência aos ADRs do grupo.
+
+#### Arquivos alterados
+
+- `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md`
+- `docs/arquitetura.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- Commits da decisão arquitetural documentada no ADR (Fase 1): `9849b96`, `ab5eec4`, `e4ecb22` e `937bad5`
+- Commits deste Checkpoint 1 (Fase 2): `0753ce8` e `1246917` (adição de `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md`, revisão de `docs/arquitetura.md` e atualização de `DECISIONS.md`)
+
+#### Decisão de projeto
+
+- Isolar a orquestração dos casos de uso em `src/service_layer/services.py` recebendo instâncias de `AbstractRepository` por parâmetro e manter `src/entrypoints/flask_app.py` como um adaptador HTTP fino com `@app.errorhandler`, permitindo validar toda a lógica de serviço em milissegundos com `FakeRepository` sem depender de Flask ou SQLite.
+
+#### Uso de IA
+
+- Utilizei o assistente de IA (Gemini) para revisar o docs/arquitetura.md em busca de lacunas em relação ao barema, me auxiliar na decisão arquitetural da camada de serviços e corrigir a redação do meu ADR (docs/adr/0003-camada-de-servico-e-entrypoint-flask.md) e deste autorrelato. Todo o texto foi baseado no código e nos testes que implementei na API Flask. Revisei e validei todo o conteúdo ajustado contra o código-fonte e a suíte de testes do repositório.
+
+### João Gabriel de Azevedo
+
+#### O que implementei
+
+- Elaborei o ADR `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`, documentando formalmente a decisão arquitetural da estratégia de testabilidade com testes unitários isolados no domínio puro, validação exaustiva de invariantes com parametrização do pytest e testes explícitos de imutabilidade e igualdade por valor em Value Objects.
+- Registrei a referência ao ADR 0004 no documento `docs/arquitetura.md` (Seção 6), complementando as evidências de rastreabilidade das decisões do grupo.
+
+#### Arquivos alterados
+
+- `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`
+- `docs/arquitetura.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- Commits da decisão arquitetural documentada no ADR (Fase 1 e evolução): `b87b6fb`, `ea8cb1d`, `436a8ab`, `299b640`, `e8f972c`, `183a70f`, `4569297`, `67deecd`, `eb71869` e `13560d5`
+- Commits deste Checkpoint 1 (Fase 2): criação de `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md`, atualização de `docs/arquitetura.md` e atualização de `DECISIONS.md`
+
+#### Decisão de projeto
+
+- Adotar uma suíte de testes unitários isolados para o domínio puro (`tests/unit/`) com pytest parametrizado, exercitando exaustivamente invariantes e casos de borda em POPOs sem acoplamento a frameworks (Flask/SQLAlchemy), assegurando feedback na ordem de microssegundos e documentação executável das regras de negócio.
+
+#### Uso de IA
+
+- Utilizei assistente de IA para auxiliar na estruturação e revisão do ADR `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md` e na organização deste autorrelato, com base nas implementações de testes unitários e configurações de ambiente realizadas no projeto.
+
 ## Parte 2 - checkpoint 2 (03/11/2026)
 
 ### Davi França Emmerick de Souza
@@ -332,29 +384,64 @@ Arquivos Markdown:
 
 - Usei um assistente de IA para localizar a seção SOLID do enunciado, analisar o histórico e o agregado `Pedido`. Revisei a proposta contra a implementação e os testes do repositório.
 
-
 ### Victor Antunes dos Santos (@VictorAntunesCastro)
 
 #### O que implementei
 
-- Elaborei o ADR `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md`, documentando a decisão de isolar a camada de serviços (`src/service_layer/services.py`) do entrypoint HTTP (`src/entrypoints/flask_app.py`) por meio da injeção explícita de repositórios (`AbstractRepository` / `FakeRepository`) e do tratamento centralizado de exceções no Flask.
-- Revisei e complementei o documento `docs/arquitetura.md`, adicionando explicitamente as restrições arquiteturais do projeto (Seção 2), detalhando o papel do `FakeRepository` e o mapeamento de erros HTTP na tabela de componentes (Seção 3) e incluindo nas evidências (Seção 6) o comparativo real de desempenho entre a suíte unitária (`114` testes em `~0,14 s`) e a suíte E2E (`34` testes em `~0,32 s`), além da referência aos ADRs do grupo.
+- Refatorei a camada de serviço (`src/service_layer/services.py`) e o entrypoint Flask (`src/entrypoints/flask_app.py`) aplicando o **Princípio da Inversão de Dependência (DIP)**, declarando o protocolo abstrato `Repositorio[T]` diretamente na camada de serviço (eliminando a dependência estática de `src.adapters.repository`) e unificando o acesso a entregas exclusivamente por meio do contrato `Repositorio[Entrega]` com a implementação em memória `EntregaMemoryRepository` (`add` / `get` / `list`).
+- Atualizei e ampliei as suítes `tests/unit/test_services.py` e `tests/e2e/test_api.py` com 2 novos testes validando o protocolo `Repositorio[Entrega]` e a injeção de `EntregaMemoryRepository` em `create_app()`.
+- Documentei a violação de DIP, o código anterior (`937bad5` e `1213e36`), a refatoração, a justificativa arquitetural de localização de `EntregaMemoryRepository`, a preservação de comportamento e a análise de custos em `docs/solid.md`.
 
 #### Arquivos alterados
 
-- `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md`
-- `docs/arquitetura.md`
+- `src/service_layer/services.py`
+- `src/entrypoints/flask_app.py`
+- `tests/unit/test_services.py`
+- `tests/e2e/test_api.py`
+- `docs/solid.md`
 - `DECISIONS.md`
 
 #### Commits relevantes
 
-- Commits da decisão arquitetural documentada no ADR (Fase 1): `9849b96`, `ab5eec4`, `e4ecb22` e `937bad5`
-- Commits deste Checkpoint 1 (Fase 2): adição de `docs/adr/0003-camada-de-servico-e-entrypoint-flask.md`, revisão de `docs/arquitetura.md` e atualização de `DECISIONS.md`
+- Código anterior (Fase 1, antes de 06/10/2026): `e4ecb22`, `937bad5` e `1213e36`.
+- Commits próprios deste Checkpoint 2: `46cdb65` (`[Refactor] Aplica DIP na camada de servicos e repositorio de entregas`), `fdc3558` (`[Docs] Documenta refatoracao DIP em solid.md e autorrelato do Checkpoint 2`) e commit de refinamento removendo o fallback de dicionário.
 
 #### Decisão de projeto
 
-- Isolar a orquestração dos casos de uso em `src/service_layer/services.py` recebendo instâncias de `AbstractRepository` por parâmetro e manter `src/entrypoints/flask_app.py` como um adaptador HTTP fino com `@app.errorhandler`, permitindo validar toda a lógica de serviço em milissegundos com `FakeRepository` sem depender de Flask ou SQLite.
+- Definir o protocolo `Repositorio[T]` na própria camada de serviço (`src/service_layer/services.py`) e exigir que os casos de uso de pedido e entrega operem exclusivamente sobre `Repositorio[Entrega]` (sem união com `dict[str, Entrega]`), mantendo `EntregaMemoryRepository` junto ao protocolo por não possuir dependências de infraestrutura ou ORM e por preservar o escopo de arquivos do integrante.
 
 #### Uso de IA
 
-- Utilizei o assistente de IA (Gemini) para revisar o docs/arquitetura.md em busca de lacunas em relação ao barema, me auxiliar na decisão arquitetural da camada de serviços e corrigir a redação do meu ADR (docs/adr/0003-camada-de-servico-e-entrypoint-flask.md) e deste autorrelato. Todo o texto foi baseado no código e nos testes que implementei na API Flask. Revisei e validei todo o conteúdo ajustado contra o código-fonte e a suíte de testes do repositório.
+- Utilizei o assistente de IA (Gemini) para  identificar a violação do Princípio da Inversão de Dependência (DIP) nos módulos sob minha responsabilidade (`src/service_layer/services.py` e `src/entrypoints/flask_app.py`), estruturar a refatoração com `Repositorio[T]` e `EntregaMemoryRepository` no código e nos testes e revisar a documentação em `docs/solid.md` e neste autorrelato. Todo o código e documentação foram revisados e validados contra os requisitos do trabalho.
+
+### João Gabriel de Azevedo 
+
+
+
+#### O que implementei
+
+- Refatorei o contrato de repositório da camada de serviço (`src/service_layer/services.py`) aplicando o **Princípio da Segregação de Interfaces (ISP)**, dividindo o protocolo monolítico `Repositorio[T]` em papéis granulares e coesos: `LeitorRepositorio[T]` (leitura pontual por ID), `ListadorRepositorio[T]` (listagem de coleções) e `EscritorRepositorio[T]` (adição/persistência).
+- Recompus o protocolo completo `Repositorio[T]` através da herança múltipla dos protocolos segregados (`LeitorRepositorio`, `ListadorRepositorio` e `EscritorRepositorio`), assegurando 100% de compatibilidade estrutural retroativa com os repositórios existentes (`SQLAlchemyRepository`, `ClienteRepository`, `RestauranteRepository`, `PedidoRepository`, `EntregaMemoryRepository` e `FakeRepository`).
+- Atualizei as assinaturas das funções de caso de uso em `src/service_layer/services.py` para dependerem estritamente da interface mínima necessária (`consultar_cliente`, `consultar_pedido` e `consultar_status_entrega` dependem de `LeitorRepositorio`; `listar_restaurantes` depende de `ListadorRepositorio`; `listar_pedidos_do_cliente` e `criar_pedido` dependem dos papéis específicos de leitura e escrita).
+- Adicionei 3 novos testes unitários em `tests/unit/test_services.py` comprovando que dublês parciais (que implementam somente `get` ou somente `list`) funcionam perfeitamente nos serviços, sem necessidade de implementar métodos não utilizados.
+- Documentei detalhadamente a violação de ISP, a refatoração, a preservação de comportamento e os custos no arquivo `docs/solid.md`.
+
+#### Arquivos alterados
+
+- `src/service_layer/services.py`
+- `tests/unit/test_services.py`
+- `docs/solid.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- Código anterior: `46cdb65` e `5438f36`.
+- Commit próprio com a refatoração ISP: a preencher após o commit das alterações.
+
+#### Decisão de projeto
+
+- Segregar a abstração de repositório na camada de serviços em protocolos de papéis específicos (`LeitorRepositorio`, `ListadorRepositorio`, `EscritorRepositorio`) e manter `Repositorio` como a composição desses protocolos, garantindo que consumidores de leitura não sejam forçados a depender de operações de escrita ou varredura de coleções (ISP) e permitindo dublês de teste mais leves e expressivos.
+
+#### Uso de IA
+
+- Utilizei assistente de IA para auxiliar na análise das interfaces da camada de serviços perante o Princípio da Segregação de Interfaces (ISP), na estruturação dos protocolos segregados e na elaboração da documentação em `docs/solid.md` e neste autorrelato.

@@ -5,7 +5,7 @@
 | Integrante                                       | Agregado(s) / módulo(s)                     | Responsabilidade                                                  |
 | ------------------------------------------------ | ------------------------------------------- | ----------------------------------------------------------------- |
 | Davi França Emmerick de Souza                    | Domínio / entidades / regras de negócio      | Estrutura do domínio, entidades, agregados e validações            |
-| Leandro Machado                                  | Infraestrutura / ambiente                   | Configuração do projeto, CI e suporte ao repositório              |
+| Leandro Machado                                  | Infraestrutura / ambiente /regras de negócio | Configuração do projeto, CI e suporte ao repositório e as regra    |
 | João Gabriel de Azevedo                          | Testes unitários / domínio                  | Implementação da suíte de testes unitários e qualidade do domínio |
 | Victor Antunes dos Santos (@VictorAntunesCastro) | Camada de serviço, entrypoints e testes e2e | Orquestração de casos de uso, API Flask e testes de ponta a ponta |
 

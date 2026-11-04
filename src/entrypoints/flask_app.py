@@ -29,7 +29,7 @@ def create_app(cliente_repo=None, restaurante_repo=None, pedido_repo=None, entre
         if pedido_repo is None:
             pedido_repo = PedidoRepository(engine)
     if entregas is None:
-        entregas = {}
+        entregas = services.EntregaMemoryRepository()
     app = Flask(__name__)
 
     @app.errorhandler(services.NaoEncontrado)

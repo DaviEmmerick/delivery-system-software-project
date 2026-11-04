@@ -66,3 +66,22 @@ def test_restaurante_repository_persiste_e_lista_restaurantes(repositories):
     assert recuperado.id == restaurante.id
     assert recuperado.nome == "Restaurante Central"
     assert [item.id for item in restaurante_repository.list()] == [restaurante.id]
+
+
+def test_restaurante_repository_preserva_produtos_no_round_trip(repositories):
+    _, _, repository = repositories
+    restaurante = Restaurante(
+        nome="Pizzaria",
+        produtos=[Produto("Pizza", 40.0), Produto("Suco", 8.5)],
+    )
+
+    repository.add(restaurante)
+    recuperado = repository.get(restaurante.id)
+
+    assert recuperado is not None
+    assert recuperado.id == restaurante.id
+    assert recuperado.nome == restaurante.nome
+    assert [(produto.nome, produto.preco) for produto in recuperado.produtos] == [
+        ("Pizza", 40.0),
+        ("Suco", 8.5),
+    ]

@@ -36,3 +36,238 @@ Não foram adicionados novos testes. As chamadas existentes nos testes unitário
 ### Custo
 
 A mudança adiciona uma classe e um módulo e exige que chamadas que fornecem `Produto` usem explicitamente a factory. Isso torna visível a conversão para a representação do domínio e deixa `Pedido` focado nas próprias invariantes; o custo adicional é pequeno e concentrado na criação do agregado. A interface de construção direta de `Pedido` agora exige `ItemPedido`; os caminhos que aceitam `Produto` continuam disponíveis pela factory.
+
+---
+
+## Victor Antunes dos Santos (@VictorAntunesCastro) — Camada de Serviço, Entrypoints e Testes E2E
+
+### Princípio e situação anterior
+
+**Princípio da Inversão de Dependência (DIP).** Nos commits `e4ecb22` (28/09/2026), `937bad5` (29/09/2026) e `1213e36` (29/09/2026), anteriores a 06/10/2026, a camada de serviço (`src/service_layer/services.py`) e o entrypoint Flask (`src/entrypoints/flask_app.py`) apresentavam violação de DIP:
+
+1. **Violação principal (em tempo de execução) — acoplamento direto a estrutura de dados concreta (`dict[str, Entrega]`) nos casos de uso de entrega:** Enquanto os casos de uso de `Cliente`, `Restaurante` e `Pedido` operavam sobre a interface abstrata de repositório (`add`, `get`, `list`), as funções `criar_pedido`, `consultar_status_entrega` e `atualizar_status_entrega` dependiam diretamente de um dicionário Python concreto (`entregas: dict[str, Entrega]`), realizando indexação manual (`entregas[pedido.id] = ...`) dentro da camada de orquestração.
+2. **Violação complementar (dependência estática entre camadas):** O módulo `src/service_layer/services.py` importava `AbstractRepository` de `src.adapters.repository` sob `TYPE_CHECKING`, mantendo uma dependência estática de tipagem da camada de serviço para o módulo de adapters em vez de declarar seu próprio protocolo abstrato na camada de serviço.
+
+Trecho de `src/service_layer/services.py` no commit `1213e36` (linhas 6–7 e 70–117) e `937bad5`:
+
+```python
+if TYPE_CHECKING: 
+    from src.adapters.repository import AbstractRepository
+...
+def criar_pedido(
+    cliente_id: str,
+    produtos: list[dict],
+    cliente_repo: AbstractRepository,
+    pedido_repo: AbstractRepository,
+    entregas: dict[str, Entrega],
+) -> str:
+    consultar_cliente(cliente_id, cliente_repo)  
+    if not isinstance(produtos, list) or not produtos:
+        raise ValueError("pedido deve conter ao menos um item")
+    itens = [_montar_item(produto) for produto in produtos]
+    pedido = Pedido(cliente=cliente_id, itens=itens)  
+    pedido_repo.add(pedido)
+    entregas[pedido.id] = Entrega(pedido_id=pedido.id)
+    return pedido.id
+...
+def consultar_status_entrega(pedido_id: str, entregas: dict[str, Entrega]) -> str:
+    entrega = entregas.get(pedido_id)
+    if entrega is None:
+        raise NaoEncontrado("entrega não encontrada")
+    return entrega.status
+
+def atualizar_status_entrega(pedido_id: str, novo_status: str, entregas: dict[str, Entrega]) -> str:
+    entrega = entregas.get(pedido_id)
+    if entrega is None:
+        raise NaoEncontrado("entrega não encontrada")
+    ...
+    entrega_atualizada = Entrega(pedido_id=pedido_id, status=status_normalizado)
+    entregas[pedido_id] = entrega_atualizada
+    return entrega_atualizada.status
+```
+
+E em `src/entrypoints/flask_app.py` (`937bad5` / `1213e36`, linhas 31–32):
+
+```python
+    if entregas is None:
+        entregas = {}
+```
+
+### Problema concreto
+
+Qualquer mudança de requisito para persistir `Entrega` em um repositório de banco de dados (como SQLAlchemy/SQLite, a exemplo de `ClienteRepository` e `PedidoRepository`) obrigava a modificar diretamente a implementação das três funções de caso de uso em `src/service_layer/services.py` (`criar_pedido`, `consultar_status_entrega` e `atualizar_status_entrega`), pois elas exigiam a sintaxe de indexação por chave de `dict` (`entregas[pedido.id] = ...`) em vez do contrato `add(entity)` / `get(id)` / `list()`. Além disso, a tipagem da camada de serviço apontava para `src.adapters.repository`, contrariando o princípio de que a abstração deve pertencer à camada de alto nível.
+
+### Refatoração
+
+1. **Definição da abstração na camada de serviço (`Repositorio[T]`):** Foi declarado o protocolo genérico `@runtime_checkable class Repositorio(Protocol[T])` com os métodos `add(entity)`, `get(entity_id)` e `list()` diretamente em `src/service_layer/services.py`, eliminando a dependência estática de `src.adapters.repository`.
+2. **Unificação do acesso a `Entrega` exclusivamente via `Repositorio[Entrega]`:** Os casos de uso `criar_pedido`, `consultar_status_entrega` e `atualizar_status_entrega` passaram a receber `entregas: Repositorio[Entrega]` e a operar exclusivamente pelos métodos `entregas.add(...)` e `entregas.get(...)`, removendo qualquer acoplamento a `dict[str, Entrega]`.
+3. **Implementação de `EntregaMemoryRepository` e injeção no Flask:** Foi criada a classe `EntregaMemoryRepository` cumprindo `Repositorio[Entrega]`, e `create_app()` em `src/entrypoints/flask_app.py` passou a injetá-la por padrão. *Nota sobre localização:* embora repositórios com dependências de infraestrutura (como SQLAlchemy) fiquem em `src/adapters/`, `EntregaMemoryRepository` não depende de banco de dados nem de ORM externo — é um colaborador padrão puramente em memória para os casos de uso de entrega e foi mantido ao lado do protocolo `Repositorio[T]` em `src/service_layer/services.py` para respeitar a divisão de módulos por integrante definida no projeto sem tocar em arquivos de outros membros.
+
+- **Código anterior:** `937bad5` (`Fix: Restaura API Flask funcional após corrupção em merge`, de 29/09/2026) e `1213e36` (29/09/2026).
+- **Código após a refatoração:** `46cdb65` — `[Refactor] Aplica DIP na camada de servicos e repositorio de entregas` (03/11/2026) e commit subsequente de remoção do fallback de `dict`.
+- **Arquivos alterados:** `src/service_layer/services.py`, `src/entrypoints/flask_app.py`, `tests/unit/test_services.py` e `tests/e2e/test_api.py`.
+
+### Preservação do comportamento
+
+Todos os 33 cenários unitários existentes em `tests/unit/test_services.py` e os 34 cenários E2E em `tests/e2e/test_api.py` continuaram passando sem regressão de contrato HTTP nem de regras de negócio. Além disso, foram adicionados 2 novos testes automatizados para validar especificamente a refatoração:
+- `test_entrega_memory_repository_cumpre_protocolo_repositorio` (`tests/unit/test_services.py`): verifica que `EntregaMemoryRepository` satisfaz `isinstance(..., services.Repositorio)` e executa o ciclo completo de criação e atualização de status via `add`, `get` e `list`;
+- `test_create_app_aceita_repositorio_de_entrega_injetado` (`tests/e2e/test_api.py`): comprova ponta a ponta no Flask que `create_app(entregas=entrega_repo)` opera desacoplado de dicionários concretos.
+
+### Custo
+
+A refatoração acrescentou o protocolo `Repositorio[T]` e a classe `EntregaMemoryRepository` em `src/service_layer/services.py` (cerca de 28 linhas adicionais e um nível extra de indireção no acesso às entregas). Esse custo compensa porque elimina a dependência da camada de serviços em relação a `src.adapters.repository`, padroniza todos os agregados sob o mesmo contrato abstrato (`add`/`get`/`list`) e permite injetar uma futura implementação persistente de `Repositorio[Entrega]` sem alterar a lógica de orquestração dos casos de uso.
+
+## Leandro Machado Cardoso da Cunha - Mapeamento de Restaurante
+
+### Princípio e situação anterior
+
+**Princípio da Substituição de Liskov (LSP).** No adapter criado no commit
+`ac665e3`, o `RestauranteRepository` implementava o contrato de repositório,
+mas o mapeamento persistia somente o `id` e o `nome` de `Restaurante`:
+
+```python
+def _to_model(self, entity: Restaurante) -> RestauranteModel:
+     return RestauranteModel(id=entity.id, nome=entity.nome)
+
+def _to_entity(self, model: RestauranteModel) -> Restaurante:
+     return Restaurante(model.nome, id=model.id)
+```
+
+A entidade `Restaurante`, entretanto, também possui a coleção
+`produtos`. Portanto, o fluxo abaixo não preservava o estado da entidade:
+
+```python
+restaurante = Restaurante(
+     "Pizzaria",
+     produtos=[Produto("Pizza", 40.0)],
+)
+restaurante_repo.add(restaurante)
+recuperado = restaurante_repo.get(restaurante.id)
+```
+
+O objeto original possuía um produto, mas `recuperado.produtos` era uma lista
+vazia. Isso representava um risco de LSP porque um cliente que dependesse do
+contrato `AbstractRepository[Restaurante]` poderia substituir uma implementação
+em memória por `RestauranteRepository` sem mudar seu código, mas obteria
+resultados diferentes. O repositório em memória preservava o objeto completo,
+enquanto o adapter SQLAlchemy perdia parte do estado durante o round-trip
+`add()`/`get()`.
+
+O contrato abstrato não declarava formalmente a regra de round-trip, mas os
+métodos `add()` e `get()` criavam a expectativa de que uma entidade salva
+pudesse ser recuperada sem perda dos seus dados. Essa diferença poderia causar
+falhas em regras, cálculos, listagens ou respostas que utilizassem o catálogo
+de produtos do restaurante. A mudança de requisito que expôs o problema foi a
+necessidade plausível de persistir e consultar os produtos associados ao
+restaurante, já que o serviço já aceitava produtos e a entidade já os mantinha.
+
+- **Código anterior:** `ac665e3`, commit que introduziu o adapter e o
+  mapeamento inicial de `Restaurante`.
+- **Código após a refatoração:** hash do commit autoral desta correção a
+  preencher após o commit.
+- **Arquivos alterados:** `src/adapters/orm.py`,
+  `src/adapters/repository.py` e `tests/integration/test_repositories.py`.
+
+### Refatoração
+
+1. **Persistência dos produtos:** foi criado `RestauranteProdutoModel` em
+    `src/adapters/orm.py`, armazenando nome, preço e posição de cada produto.
+2. **Relacionamento ORM:** `RestauranteModel` passou a possuir um
+    relacionamento um-para-muitos com `RestauranteProdutoModel`, com
+    `cascade="all, delete-orphan"` e ordenação pela posição original.
+3. **Mapeamento de saída:** `RestauranteRepository._to_model()` passou a
+    converter todos os `Produto` da entidade em modelos ORM.
+4. **Mapeamento de entrada:** `RestauranteRepository._to_entity()` passou a
+    reconstruir os objetos `Produto` e entregá-los ao construtor de
+    `Restaurante`.
+
+Com isso, as implementações em memória e SQLAlchemy preservam o mesmo estado
+observável da entidade após o armazenamento e a recuperação.
+
+### Preservação do comportamento
+
+Foi adicionado o teste
+`test_restaurante_repository_preserva_produtos_no_round_trip`, em
+`tests/integration/test_repositories.py`. O teste salva um restaurante com dois
+produtos e verifica que `get()` preserva o identificador, o nome, os nomes, os
+preços e a ordem dos produtos. O teste específico passou com resultado `1
+passed`.
+
+A alteração não modificou o contrato HTTP existente. A suíte executada sem o
+arquivo antigo `tests/unit/test_pedido.py` teve `136 passed`. A suíte completa
+teve `143 passed` e `8 failed`; as falhas estão concentradas no teste antigo de
+`Pedido`, que ainda espera que a entidade aceite `Produto` diretamente, embora
+a implementação atual use `ItemPedido` e `PedidoFactory`. Não houve falha
+relacionada ao mapeamento de `Restaurante`.
+
+### Custo
+
+A refatoração acrescentou um modelo ORM, um relacionamento, conversões
+adicionais no adapter e um teste de integração. Também aumentou a quantidade de
+dados persistidos e a complexidade do mapeamento, pois agora o repositório
+precisa manter os produtos associados ao restaurante.
+
+Esse custo compensa porque elimina a perda silenciosa de estado, mantém o
+comportamento esperado entre implementações substituíveis do repositório e
+permite atender à evolução natural do requisito de consultar produtos de um
+restaurante sem criar tratamento especial para o adapter SQLAlchemy.
+
+---
+
+## João Gabriel de Azevedo (@JoaoGAzevedo) — Segregação de Interfaces na Camada de Serviços (ISP)
+
+### Princípio e situação anterior
+
+**Princípio da Segregação de Interfaces (ISP).** No commit `46cdb65` (e refinamentos subsequentes do Checkpoint 2), a camada de serviço (`src/service_layer/services.py`) introduziu o protocolo abstrato `Repositorio[T]` para desacoplar a camada de serviço da implementação concreta de persistência.
+
+No entanto, o protocolo `Repositorio[T]` foi definido como uma interface monolítica contendo três operações distintas:
+
+```python
+@runtime_checkable
+class Repositorio(Protocol[T]):
+    def add(self, entity: T) -> None: ...
+    def get(self, entity_id: str) -> T | None: ...
+    def list(self) -> list[T]: ...
+```
+
+Isso gerava uma violação do **ISP** (*"Nenhum cliente deve ser forçado a depender de métodos que não utiliza"*):
+1. **Consumidores que realizam apenas leitura pontual:** os casos de uso `consultar_cliente(cliente_id, cliente_repo)`, `consultar_pedido(pedido_id, pedido_repo)` e `consultar_status_entrega(pedido_id, entregas)` utilizam exclusivamente o método `get(entity_id)`. Nenhum deles jamais chama `add()` ou `list()`.
+2. **Consumidores que realizam apenas listagem:** o caso de uso `listar_restaurantes(restaurante_repo)` utiliza exclusivamente `list()`, sem jamais acessar `get()` ou `add()`.
+3. **Consumidores que leem de uma fonte e escrevem em outra:** `criar_pedido` utiliza apenas `get()` do `cliente_repo` (via `consultar_cliente`) e `add()` em `pedido_repo` e `entregas`.
+
+### Problema concreto
+
+Ao forçar a tipagem monolítica `Repositorio[T]` em todas essas funções:
+- Dublês de teste (stubs e mocks) para testes unitários focados em consulta eram obrigados a implementar métodos inúteis (`add` e `list`), geralmente com implementações vazias ou `raise NotImplementedError`.
+- Adaptadores especializados (como uma réplica de leitura de banco de dados, um cliente de cache somente-leitura ou uma consulta de catálogo externo) não podiam ser passados diretamente para `consultar_cliente` ou `listar_restaurantes` sem violar LSP ou implementar métodos de escrita fictícios.
+- A intenção arquitetural de cada caso de uso ficava obscurecida na assinatura das funções: não era evidente se `consultar_cliente` poderia ou não mutar o repositório ou varrer a tabela inteira.
+
+### Refatoração
+
+Segregamos o contrato `Repositorio[T]` em papéis granulares (*role interfaces*) diretamente em `src/service_layer/services.py`:
+
+1. **Protocolo `LeitorRepositorio[T]`:** expõe exclusivamente `get(entity_id: str) -> T | None`.
+2. **Protocolo `ListadorRepositorio[T]`:** expõe exclusivamente `list() -> list[T]`.
+3. **Protocolo `EscritorRepositorio[T]`:** expõe exclusivamente `add(entity: T) -> None`.
+4. **Composição em `Repositorio[T]`:** compõe `LeitorRepositorio[T]`, `ListadorRepositorio[T]` e `EscritorRepositorio[T]`, preservando total compatibilidade com os repositórios completos existentes.
+5. **Ajuste das assinaturas das funções de serviço:**
+   - `consultar_cliente` recebe `cliente_repo: LeitorRepositorio[Cliente]`.
+   - `consultar_pedido` recebe `pedido_repo: LeitorRepositorio[Pedido]`.
+   - `consultar_status_entrega` recebe `entregas: LeitorRepositorio[Entrega]`.
+   - `listar_restaurantes` recebe `restaurante_repo: ListadorRepositorio[Restaurante]`.
+   - `listar_pedidos_do_cliente` recebe `cliente_repo: LeitorRepositorio[Cliente]` e `pedido_repo: ListadorRepositorio[Pedido]`.
+   - `criar_pedido` recebe `cliente_repo: LeitorRepositorio[Cliente]`, `pedido_repo: EscritorRepositorio[Pedido]` e `entregas: EscritorRepositorio[Entrega]`.
+
+- **Código anterior:** commits `46cdb65` e `5438f36`.
+- **Arquivos alterados:** `src/service_layer/services.py`, `tests/unit/test_services.py`, `docs/solid.md` e `DECISIONS.md`.
+
+### Preservação do comportamento
+
+A refatoração é 100% retrocompatível devido à tipagem estrutural (*structural subtyping / duck typing*) do Python `Protocol`:
+- Todos os repositórios existentes (`SQLAlchemyRepository`, `ClienteRepository`, `RestauranteRepository`, `PedidoRepository`, `EntregaMemoryRepository` e `FakeRepository`) já implementam `add`, `get` e `list`, portanto satisfazem simultaneamente os protocolos segregados e o protocolo composto `Repositorio`.
+- Todas as 34 funções de teste existentes em `tests/unit/test_services.py` continuaram passando sem nenhuma modificação necessária.
+- Foram adicionados 3 novos testes unitários específicos em `tests/unit/test_services.py` comprovando que dublês mínimos que implementam **apenas** `get()` ou **apenas** `list()` são aceitos e funcionam perfeitamente nos respectivos serviços, sem exigir métodos de escrita.
+
+### Custo
+
+O custo da refatoração é mínimo: adiciona 3 definições de protocolos leves em `src/service_layer/services.py` (~20 linhas de código). Em contrapartida, ganha-se expressividade nas assinaturas dos serviços, desacoplamento estrito entre consumidores e métodos não utilizados, e a capacidade de criar dublês de teste com o menor escopo possível.
