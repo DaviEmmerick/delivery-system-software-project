@@ -147,6 +147,8 @@ def test_listar_pedidos_de_cliente_inexistente_levanta_nao_encontrado(cliente_re
 def test_atualizar_status_entrega_aceita_status_validos(status, cliente_repo, pedido_repo, entregas):
     cliente_id = _cliente(cliente_repo)
     pedido_id = _pedido(cliente_id, cliente_repo, pedido_repo, entregas)
+    if status in {"entregue", "cancelada"}:
+        services.atualizar_status_entrega(pedido_id, "em_transito", entregas)
     assert services.atualizar_status_entrega(pedido_id, status, entregas) == status
     assert services.consultar_status_entrega(pedido_id, entregas) == status
 
@@ -163,6 +165,14 @@ def test_atualizar_status_entrega_rejeita_status_invalido(status, cliente_repo, 
 def test_atualizar_status_de_entrega_inexistente_levanta_nao_encontrado(entregas):
     with pytest.raises(services.NaoEncontrado):
         services.atualizar_status_entrega("nao-existe", "entregue", entregas)
+
+
+def test_atualizar_status_entrega_rejeita_transicao_invalida(cliente_repo, pedido_repo, entregas):
+    cliente_id = _cliente(cliente_repo)
+    pedido_id = _pedido(cliente_id, cliente_repo, pedido_repo, entregas)
+    with pytest.raises(ValueError, match="transição de entrega inválida"):
+        services.atualizar_status_entrega(pedido_id, "entregue", entregas)
+    assert services.consultar_status_entrega(pedido_id, entregas) == "pendente"
 
 
 def test_entrega_memory_repository_cumpre_protocolo_repositorio(cliente_repo, pedido_repo):
@@ -220,4 +230,76 @@ def test_consultar_status_entrega_aceita_leitor_segregado():
     assert not isinstance(stub, services.Repositorio)
 
     assert services.consultar_status_entrega("ped-isp-1", stub) == "em_transito"
+
+
+def test_observer_notifica_multiplos_observadores_no_ciclo_de_entrega(
+    cliente_repo, pedido_repo, entregas
+):
+    notificador = services.NotificadorEntrega()
+    historico = services.HistoricoEntregaObservador()
+    notificacoes = services.NotificacaoClienteObservador()
+    notificador.inscrever(historico)
+    notificador.inscrever(notificacoes)
+
+    assert isinstance(historico, services.ObservadorEntrega)
+    assert isinstance(notificacoes, services.ObservadorEntrega)
+
+    cliente_id = _cliente(cliente_repo)
+    pedido_id = services.criar_pedido(
+        cliente_id,
+        [{"nome": "Pizza", "preco": 40.0}],
+        cliente_repo,
+        pedido_repo,
+        entregas,
+        notificador=notificador,
+    )
+
+    services.atualizar_status_entrega(pedido_id, "em_transito", entregas, notificador=notificador)
+    services.atualizar_status_entrega(pedido_id, "entregue", entregas, notificador=notificador)
+
+    eventos = historico.consultar_historico(pedido_id)
+    assert eventos == [
+        services.EventoStatusEntrega(pedido_id=pedido_id, status_anterior=None, novo_status="pendente"),
+        services.EventoStatusEntrega(pedido_id=pedido_id, status_anterior="pendente", novo_status="em_transito"),
+        services.EventoStatusEntrega(pedido_id=pedido_id, status_anterior="em_transito", novo_status="entregue"),
+    ]
+    assert len(notificacoes.listar_mensagens(pedido_id)) == 3
+    assert "para 'entregue'" in notificacoes.listar_mensagens(pedido_id)[-1]
+
+
+def test_observer_desinscrito_ou_transicao_invalida_nao_recebe_eventos(
+    cliente_repo, pedido_repo, entregas
+):
+    notificador = services.NotificadorEntrega()
+    historico = services.HistoricoEntregaObservador()
+    notificacoes = services.NotificacaoClienteObservador()
+    notificador.inscrever(historico)
+    notificador.inscrever(notificacoes)
+
+    cliente_id = _cliente(cliente_repo)
+    pedido_id = services.criar_pedido(
+        cliente_id,
+        [{"nome": "Suco", "preco": 8.0}],
+        cliente_repo,
+        pedido_repo,
+        entregas,
+        notificador=notificador,
+    )
+
+    # Transição inválida não deve emitir evento aos observadores
+    with pytest.raises(ValueError, match="transição de entrega inválida"):
+        services.atualizar_status_entrega(pedido_id, "entregue", entregas, notificador=notificador)
+    assert len(historico.consultar_historico(pedido_id)) == 1
+
+    # Solicitar o mesmo status (idempotente) não deve duplicar evento
+    services.atualizar_status_entrega(pedido_id, "pendente", entregas, notificador=notificador)
+    assert len(historico.consultar_historico(pedido_id)) == 1
+
+    # Desinscrever observador de notificações: apenas histórico continua recebendo
+    notificador.desinscrever(notificacoes)
+    services.atualizar_status_entrega(pedido_id, "cancelada", entregas, notificador=notificador)
+
+    assert len(historico.consultar_historico(pedido_id)) == 2
+    assert len(notificacoes.listar_mensagens(pedido_id)) == 1
+
 

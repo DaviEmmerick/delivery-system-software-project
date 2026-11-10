@@ -182,6 +182,25 @@ def test_create_app_aceita_repositorio_de_entrega_injetado():
         cliente_id = _criar_cliente(client)
         pedido_id = _criar_pedido(client, cliente_id)
         assert entrega_repo.get(pedido_id).status == "pendente"
+        resposta = client.patch(f"/pedidos/{pedido_id}/entrega", json={"status": "em_transito"})
+        assert resposta.status_code == 200
         resposta = client.patch(f"/pedidos/{pedido_id}/entrega", json={"status": "entregue"})
         assert resposta.status_code == 200
         assert entrega_repo.get(pedido_id).status == "entregue"
+
+
+def test_consultar_historico_entrega_via_observer(client):
+    cliente_id = _criar_cliente(client)
+    pedido_id = _criar_pedido(client, cliente_id)
+
+    client.patch(f"/pedidos/{pedido_id}/entrega", json={"status": "em_transito"})
+    client.patch(f"/pedidos/{pedido_id}/entrega", json={"status": "entregue"})
+
+    resposta = client.get(f"/pedidos/{pedido_id}/entrega/historico")
+    assert resposta.status_code == 200
+    assert resposta.json == [
+        {"pedido_id": pedido_id, "status_anterior": None, "novo_status": "pendente"},
+        {"pedido_id": pedido_id, "status_anterior": "pendente", "novo_status": "em_transito"},
+        {"pedido_id": pedido_id, "status_anterior": "em_transito", "novo_status": "entregue"},
+    ]
+

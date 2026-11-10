@@ -18,7 +18,13 @@ def _texto(dados: dict, campo: str, obrigatorio: bool = True) -> str | None:
         raise ValueError(f"campo '{campo}' é obrigatório e deve ser texto")
     return valor
 
-def create_app(cliente_repo=None, restaurante_repo=None, pedido_repo=None, entregas=None) -> Flask:
+def create_app(
+    cliente_repo=None,
+    restaurante_repo=None,
+    pedido_repo=None,
+    entregas=None,
+    notificador=None,
+) -> Flask:
     """Monta a API. Sem argumentos usa SQLite em memória; nos testes dá para injetar repositórios."""
     if cliente_repo is None or restaurante_repo is None or pedido_repo is None:
         engine = create_sqlite_engine()
@@ -30,6 +36,10 @@ def create_app(cliente_repo=None, restaurante_repo=None, pedido_repo=None, entre
             pedido_repo = PedidoRepository(engine)
     if entregas is None:
         entregas = services.EntregaMemoryRepository()
+    if notificador is None:
+        notificador = services.NotificadorEntrega()
+    historico_observador = services.HistoricoEntregaObservador()
+    notificador.inscrever(historico_observador)
     app = Flask(__name__)
 
     @app.errorhandler(services.NaoEncontrado)
@@ -97,7 +107,9 @@ def create_app(cliente_repo=None, restaurante_repo=None, pedido_repo=None, entre
             produtos=dados.get("produtos"),
             cliente_repo=cliente_repo,
             pedido_repo=pedido_repo,
-            entregas=entregas,)
+            entregas=entregas,
+            notificador=notificador,
+        )
         return jsonify({"pedido_id": pedido_id}), 201
 
     @app.get("/pedidos/<pedido_id>")
@@ -125,8 +137,28 @@ def create_app(cliente_repo=None, restaurante_repo=None, pedido_repo=None, entre
     @app.patch("/pedidos/<pedido_id>/entrega")
     def atualizar_status_entrega(pedido_id):
         dados = _corpo_json()
-        status = services.atualizar_status_entrega(pedido_id, _texto(dados, "status"), entregas)
+        status = services.atualizar_status_entrega(
+            pedido_id,
+            _texto(dados, "status"),
+            entregas,
+            notificador=notificador,
+        )
         return jsonify({"status": status}), 200
+
+    @app.get("/pedidos/<pedido_id>/entrega/historico")
+    def consultar_historico_entrega(pedido_id):
+        services.consultar_status_entrega(pedido_id, entregas)
+        eventos = historico_observador.consultar_historico(pedido_id)
+        return jsonify(
+            [
+                {
+                    "pedido_id": ev.pedido_id,
+                    "status_anterior": ev.status_anterior,
+                    "novo_status": ev.novo_status,
+                }
+                for ev in eventos
+            ]
+        ), 200
 
     return app
 
