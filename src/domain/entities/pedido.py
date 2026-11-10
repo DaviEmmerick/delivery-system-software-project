@@ -2,13 +2,14 @@ from collections.abc import Iterable
 from uuid import uuid4
 
 from src.domain.entities.item_pedido import ItemPedido
+from src.domain.entities.produto import Produto
 
 
 class Pedido:
     def __init__(
         self,
         cliente: str,
-        itens: Iterable[ItemPedido],
+        itens: Iterable[Produto | ItemPedido],
         id: str | None = None,
     ):
         if not isinstance(cliente, str) or not cliente.strip():
@@ -18,9 +19,12 @@ class Pedido:
         if not isinstance(itens, Iterable):
             raise ValueError("pedido deve conter ao menos um item")
 
-        itens_normalizados = tuple(itens)
+        itens_normalizados = tuple(
+            ItemPedido(item) if isinstance(item, Produto) else item
+            for item in itens
+        )
         if any(not isinstance(item, ItemPedido) for item in itens_normalizados):
-            raise ValueError("itens do pedido devem ser ItemPedido")
+            raise ValueError("itens do pedido devem ser Produtos ou ItemPedido")
         self.cliente = cliente.strip()
         self.itens = itens_normalizados
         if not self.itens:

@@ -177,6 +177,6 @@ def atualizar_status_entrega(
     status_normalizado = novo_status.strip()
     if status_normalizado not in STATUS_ENTREGA:
         raise ValueError(f"status inválido; use um de: {', '.join(STATUS_ENTREGA)}")
-    entrega_atualizada = Entrega(pedido_id=pedido_id, status=status_normalizado)
-    entregas.add(entrega_atualizada)
-    return entrega_atualizada.status
+    entrega.atualizar_status(status_normalizado)
+    entregas.add(entrega)
+    return entrega.status
