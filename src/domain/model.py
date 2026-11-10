@@ -1,4 +1,5 @@
 from src.domain.entities.cliente import Cliente
+from src.domain.entities.combo import Combo, ComponenteItem, Item
 from src.domain.entities.endereco import Endereco
 from src.domain.entities.entrega import Entrega
 from src.domain.entities.item_pedido import ItemPedido
@@ -9,13 +10,16 @@ from src.domain.entities.restaurante import Restaurante
 
 __all__ = [
     "Cliente",
+    "Combo",
+    "ComponenteItem",
+    "DescontoPercentual",
     "Endereco",
     "Entrega",
+    "Item",
     "ItemPedido",
     "Pedido",
     "PoliticaPrecoPedido",
     "PrecoRegular",
-    "DescontoPercentual",
     "Produto",
     "Restaurante",
 ]

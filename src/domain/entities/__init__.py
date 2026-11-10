@@ -1,4 +1,5 @@
 from .cliente import Cliente
+from .combo import Combo, ComponenteItem, Item
 from .endereco import Endereco
 from .entrega import Entrega
 from .pedido import Pedido

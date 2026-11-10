@@ -240,3 +240,95 @@ classDiagram
 ### Custo
 
 A introdução do padrão acrescenta um protocolo (`ObservadorEntrega`), uma classe de evento (`EventoStatusEntrega`), o sujeito (`NotificadorEntrega`), dois observadores concretos e um parâmetro opcional `notificador` nos serviços `criar_pedido` e `atualizar_status_entrega`. Isso adiciona uma camada de indireção no fluxo de atualização de entregas e exige cuidado para que observadores lentos ou com falha não bloqueiem o caso de uso síncrono. Em compensação, preserva a simplicidade de `Entrega` (que guarda apenas o estado corrente), permite consultar todo o histórico de transições na API e possibilita acoplar novos consumidores de eventos sem modificar a lógica de orquestração dos serviços.
+
+
+---
+
+## Composite na modelagem de itens e combos de produtos (João Gabriel de Azevedo)
+
+**Categoria:** Estrutural.
+
+### Contexto e problema
+
+No domínio de delivery de alimentos, produtos frequentemente não são apenas itens simples e atômicos (como um hambúrguer avulso ou um refrigerante), mas sim **combos promocionais** ou **refeições completas** compostas por múltiplos itens (ex.: "Combo Casal" contendo hambúrgueres, batata frita e um "Combo Bebidas" com seus próprios sucos). Além disso, cada combo pode aplicar um percentual de desconto comercial específico sobre o somatório de seus componentes diretos.
+
+Sem o padrão Composite, a modelagem de cardápio exigiria estruturas de dados ad-hoc (como listas heterogêneas de dicionários ou classes com condicionais `if item.is_combo: ... else: ...`), forçando o cliente (`Pedido` ou funções de cálculo) a inspecionar o tipo de cada elemento para somar seus valores recursivamente. Isso geraria acoplamento rígido, código procedural de travessia e violaria o Princípio Aberto/Fechado (OCP), tornando a adição de novos tipos de agrupamentos ou kits mais custosa e propensa a erros.
+
+### Por que Composite (e alternativa considerada)
+
+O padrão **Composite** permite compor objetos em estruturas em árvore para representar hierarquias parte-todo, possibilitando que o cliente trate objetos individuais (`Item`) e composições de objetos (`Combo`) de maneira completamente uniforme através de uma interface comum (`ComponenteItem`).
+
+- **Interface uniforme:** Tanto uma folha (`Item`) quanto um nó composto (`Combo`) respondem aos métodos `nome()` e `preco()`.
+- **Recursividade transparente:** Ao solicitar `preco()` de um `Combo`, este delega a chamada recursivamente para cada um de seus filhos (`ComponenteItem`), soma os resultados e aplica a taxa de desconto configurada. Os valores sobem pela árvore de nós de forma natural.
+- **Alternativa considerada:** Modelar combos como listas planas associadas a flags de desconto em dicionários no `Produto`, ou uma cadeia de verificações (`Chain of Responsibility` / validações de regras procedurais). Essa abordagem exigiria lógica procedural com `isinstance`, loops aninhados para cada nível de kit e múltiplos pontos de modificação sempre que a composição de ofertas mudasse. O Composite elimina essas verificações eliminando qualquer condicional no cliente.
+
+### Participantes
+
+- **Component:** `ComponenteItem` (em `src/domain/entities/combo.py`) — `Protocol` com `@runtime_checkable` que declara o contrato comum para elementos da árvore: `nome() -> str` e `preco() -> float`.
+- **Leaf (Folha):** `Item` (em `src/domain/entities/combo.py`) — representa o item atômico de venda (sem filhos). Mantém nome e valor monetário direto, implementando `nome()` e `preco()`, além do método utilitário de conversão `para_produto() -> Produto`.
+- **Composite:** `Combo` (em `src/domain/entities/combo.py`) — mantém uma coleção de filhos `ComponenteItem` e um percentual de desconto decimal. Implementa `adicionar()`, `remover()`, e a operação `preco()`, que delega o cálculo a cada filho (`sum(f.preco() for f in self._filhos) * (1.0 - self._desconto)`). Também provê `para_produto()` para integração com entidades pré-existentes.
+- **Client:** `Pedido` (ou rotas/casos de uso) que consome elementos `ComponenteItem` tratando itens simples e combos indistintamente, somando preços sem condicionais de tipo.
+
+### Diagrama de classes
+
+```mermaid
+classDiagram
+    class ComponenteItem {
+        <<Protocol / Component>>
+        +nome() str
+        +preco() float
+    }
+
+    class Item {
+        <<Leaf>>
+        -str _nome
+        -float _valor
+        +nome() str
+        +preco() float
+        +para_produto() Produto
+    }
+
+    class Combo {
+        <<Composite>>
+        -str _nome
+        -float _desconto
+        -list~ComponenteItem~ _filhos
+        +adicionar(ComponenteItem item) Combo
+        +remover(ComponenteItem item) void
+        +nome() str
+        +preco() float
+        +para_produto() Produto
+    }
+
+    class Pedido {
+        <<Client>>
+        +itens: tuple~ItemPedido~
+        +total: float
+    }
+
+    class Produto {
+        +nome: str
+        +preco: float
+    }
+
+    ComponenteItem <|.. Item : implementa
+    ComponenteItem <|.. Combo : implementa
+    Combo o--> "*" ComponenteItem : agrega filhos
+    Item ..> Produto : converte em
+    Combo ..> Produto : converte em
+    Pedido o--> Produto : referencia via ItemPedido
+```
+
+### Testes
+
+A suíte `tests/unit/test_composite.py` cobre exaustivamente o padrão através de testes automatizados:
+- `test_item_protocol_compliance_e_propriedades`: valida que `Item` cumpre o protocolo `ComponenteItem`, expõe `nome()`, `preco()`, igualdade por valor e formatação textual.
+- `test_item_converte_para_produto`: valida que `Item.para_produto()` gera um `Produto` íntegro compatível com o domínio.
+- `test_item_rejeita_nome_invalido` e `test_item_rejeita_valor_invalido`: validam invariantes de nome e valores negativos/tipos espúrios.
+- `test_combo_criacao_e_manipulacao_de_filhos`: valida criação, fluent interface (`adicionar`), cálculo com desconto aplicado e remoção de filhos.
+- `test_combo_rejeita_nome_invalido`, `test_combo_rejeita_desconto_invalido` e `test_combo_rejeita_adicao_de_objeto_incompativel`: garantem robustez e encapsulamento na montagem da composição.
+- `test_cenario_slides_seminario_composite_arvore_de_precos`: reproduz integralmente a árvore de cálculo apresentada nos slides do seminário (Combo Bebidas R$ 16,00, Combo Casal com 10% de desconto R$ 70,20 e Sobremesa avulsa R$ 10,00), comprovando que tanto a soma direta via interface uniforme `sum(item.preco() for item in itens)` quanto a passagem para o agregado `Pedido` resultam exatamente no valor previsto de **R$ 80,20**.
+
+### Custo
+
+A aplicação do Composite adiciona um protocolo (`ComponenteItem`), uma classe folha (`Item`) e a classe composta (`Combo`), além de métodos de conversão para harmonizar com a entidade `Produto` já existente no sistema. O custo de manter classes separadas para folha e composto é largamente compensado pela simplicidade do cliente, que nunca precisa checar tipos nem conhecer a profundidade da árvore. O cálculo recursivo é O(N) em relação ao número total de nós da árvore, sendo eficiente para montagens usuais de cardápios de delivery.

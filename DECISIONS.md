@@ -505,3 +505,44 @@ Arquivos Markdown:
 #### Uso de IA
 
 - Utilizei o assistente de IA para testar as estratégias e redigir a documentação e este autorrelato.
+
+
+### João Gabriel de Azevedo
+
+#### O que implementei
+
+- Implementei o padrão GoF estrutural **Composite** no domínio de produtos e pedidos (`src/domain/entities/combo.py`), definindo o contrato comum `ComponenteItem` (Component) e as classes `Item` (Leaf) e `Combo` (Composite).
+- Habilitei o tratamento uniforme de produtos avulsos e combos compostos por múltiplos itens ou outros subcombos aninhados com taxas de desconto promocionais, calculando o preço recursivamente de baixo para cima pela árvore sem necessidade de verificações condicionais de tipo.
+- Integrei a estrutura com o agregado `Pedido` e as entidades existentes por meio de métodos de conversão `para_produto()`, expondo as novas entidades em `src/domain/entities/__init__.py` e `src/domain/model.py`.
+- Desenvolvi uma suíte de testes unitários dedicada em `tests/unit/test_composite.py` com cobertura completa de validações invariantes, conformidade ao protocolo, manipulação de filhos e validação do cenário de cálculo hierárquico com subcombos aninhados.
+- Documentei o padrão Composite, contexto e problema, justificativa, alternativa considerada, participantes, diagrama de classes em Mermaid, testes e análise de custo no arquivo `docs/gof.md`.
+
+#### Por que
+
+- Para permitir ao sistema de delivery ofertar kits, refeições e combos promocionais flexíveis e aninhados sem acoplar o cliente à estrutura interna de cada produto.
+- Para eliminar código procedural e condicionais do tipo `if item.is_combo: ...` no cálculo de preços, respeitando o Princípio Aberto/Fechado (OCP).
+- Para trazer diversidade de categorias GoF ao projeto da equipe, implementando um padrão **estrutural** enquanto os demais integrantes implementaram padrões comportamentais (Strategy, State e Observer).
+
+#### Arquivos alterados
+
+Arquivos Python:
+- `src/domain/entities/combo.py`
+- `src/domain/entities/__init__.py`
+- `src/domain/model.py`
+- `tests/unit/test_composite.py`
+
+Arquivos Markdown:
+- `docs/gof.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- Commits próprios deste Checkpoint 3: a preencher após o commit manual das alterações.
+
+#### Decisão de projeto
+
+- Adotar o padrão GoF **Composite** (`ComponenteItem`, `Item` e `Combo`) para modelar a hierarquia de itens do cardápio e cálculo de preços com descontos parciais, tratando folhas e nós compostos de forma polimórfica e uniforme.
+
+#### Uso de IA
+
+- Utilizei assistente de IA como ferramenta de apoio para análise dos padrões GoF da equipe, estruturação do diagrama de classes em Mermaid e auxílio na redação deste autorrelato e da documentação técnica em `docs/gof.md`.
