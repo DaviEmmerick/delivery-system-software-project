@@ -478,8 +478,6 @@ Arquivos Markdown:
 
 - Utilizei o assistente de IA (Gemini) como apoio na análise dos padrões GoF, na organização da implementação do Observer, na elaboração dos testes e na criação do diagrama Mermaid para a documentação. O código e os testes foram revisados e validados localmente com `pytest`.
 
-## Parte 2 - checkpoint 3 (10/11/2026)
-
 ### Davi França Emmerick de Souza
 
 #### O que implementei
