@@ -147,6 +147,8 @@ def test_listar_pedidos_de_cliente_inexistente_levanta_nao_encontrado(cliente_re
 def test_atualizar_status_entrega_aceita_status_validos(status, cliente_repo, pedido_repo, entregas):
     cliente_id = _cliente(cliente_repo)
     pedido_id = _pedido(cliente_id, cliente_repo, pedido_repo, entregas)
+    if status in {"entregue", "cancelada"}:
+        services.atualizar_status_entrega(pedido_id, "em_transito", entregas)
     assert services.atualizar_status_entrega(pedido_id, status, entregas) == status
     assert services.consultar_status_entrega(pedido_id, entregas) == status
 
@@ -163,6 +165,14 @@ def test_atualizar_status_entrega_rejeita_status_invalido(status, cliente_repo, 
 def test_atualizar_status_de_entrega_inexistente_levanta_nao_encontrado(entregas):
     with pytest.raises(services.NaoEncontrado):
         services.atualizar_status_entrega("nao-existe", "entregue", entregas)
+
+
+def test_atualizar_status_entrega_rejeita_transicao_invalida(cliente_repo, pedido_repo, entregas):
+    cliente_id = _cliente(cliente_repo)
+    pedido_id = _pedido(cliente_id, cliente_repo, pedido_repo, entregas)
+    with pytest.raises(ValueError, match="transição de entrega inválida"):
+        services.atualizar_status_entrega(pedido_id, "entregue", entregas)
+    assert services.consultar_status_entrega(pedido_id, entregas) == "pendente"
 
 
 def test_entrega_memory_repository_cumpre_protocolo_repositorio(cliente_repo, pedido_repo):

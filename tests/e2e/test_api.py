@@ -182,6 +182,8 @@ def test_create_app_aceita_repositorio_de_entrega_injetado():
         cliente_id = _criar_cliente(client)
         pedido_id = _criar_pedido(client, cliente_id)
         assert entrega_repo.get(pedido_id).status == "pendente"
+        resposta = client.patch(f"/pedidos/{pedido_id}/entrega", json={"status": "em_transito"})
+        assert resposta.status_code == 200
         resposta = client.patch(f"/pedidos/{pedido_id}/entrega", json={"status": "entregue"})
         assert resposta.status_code == 200
         assert entrega_repo.get(pedido_id).status == "entregue"

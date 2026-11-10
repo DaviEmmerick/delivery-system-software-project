@@ -25,6 +25,33 @@ def test_entrega_status_entregue():
     assert entrega.status == "entregue"
 
 
+def test_entrega_transita_de_pendente_para_em_transito_e_entregue():
+    entrega = Entrega(pedido_id="PED-004")
+
+    entrega.atualizar_status("em_transito")
+    assert entrega.status == "em_transito"
+
+    entrega.atualizar_status("entregue")
+    assert entrega.status == "entregue"
+
+
+def test_entrega_pendente_pode_ser_cancelada():
+    entrega = Entrega(pedido_id="PED-005")
+
+    entrega.atualizar_status("cancelada")
+
+    assert entrega.status == "cancelada"
+
+
+def test_entrega_estado_final_nao_permite_nova_transicao():
+    entrega = Entrega(pedido_id="PED-006", status="entregue")
+
+    with pytest.raises(ValueError, match="transição de entrega inválida"):
+        entrega.atualizar_status("cancelada")
+
+    assert entrega.status == "entregue"
+
+
 def test_entrega_deve_remover_espacos_em_branco_do_pedido_id():
     """Garante remoção de espaços em branco ao redor de pedido_id."""
     entrega = Entrega(pedido_id="  PED-003  ")
