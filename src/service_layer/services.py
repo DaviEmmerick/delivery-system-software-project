@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 import math
 from typing import Protocol, TypeVar, runtime_checkable
 from src.domain.model import Cliente, Endereco, Entrega, ItemPedido, Pedido, Produto, Restaurante
@@ -52,6 +53,75 @@ class EntregaMemoryRepository:
 
     def list(self) -> list[Entrega]:
         return list(self._dados.values())
+
+
+@dataclass(frozen=True)
+class EventoStatusEntrega:
+    """Evento imutável emitido quando uma entrega é criada ou muda de status."""
+
+    pedido_id: str
+    status_anterior: str | None
+    novo_status: str
+
+
+@runtime_checkable
+class ObservadorEntrega(Protocol):
+    """Interface Observer (GoF) para reagir a mudanças no status de entrega."""
+
+    def atualizar(self, evento: EventoStatusEntrega) -> None:
+        ...
+
+
+class NotificadorEntrega:
+    """Subject (GoF Observer) que gerencia observadores de eventos de entrega."""
+
+    def __init__(self) -> None:
+        self._observadores: list[ObservadorEntrega] = []
+
+    def inscrever(self, observador: ObservadorEntrega) -> None:
+        if observador not in self._observadores:
+            self._observadores.append(observador)
+
+    def desinscrever(self, observador: ObservadorEntrega) -> None:
+        if observador in self._observadores:
+            self._observadores.remove(observador)
+
+    def notificar(self, evento: EventoStatusEntrega) -> None:
+        for observador in list(self._observadores):
+            observador.atualizar(evento)
+
+
+class HistoricoEntregaObservador:
+    """ConcreteObserver que registra a trilha de auditoria das mudanças de status por pedido."""
+
+    def __init__(self) -> None:
+        self._historico: dict[str, list[EventoStatusEntrega]] = {}
+
+    def atualizar(self, evento: EventoStatusEntrega) -> None:
+        self._historico.setdefault(evento.pedido_id, []).append(evento)
+
+    def consultar_historico(self, pedido_id: str) -> list[EventoStatusEntrega]:
+        return list(self._historico.get(pedido_id, []))
+
+
+class NotificacaoClienteObservador:
+    """ConcreteObserver que gera mensagens de acompanhamento a cada mudança de status."""
+
+    def __init__(self) -> None:
+        self._mensagens: dict[str, list[str]] = {}
+
+    def atualizar(self, evento: EventoStatusEntrega) -> None:
+        if evento.status_anterior is None:
+            msg = f"Pedido {evento.pedido_id}: entrega iniciada com status '{evento.novo_status}'."
+        else:
+            msg = (
+                f"Pedido {evento.pedido_id}: status alterado de "
+                f"'{evento.status_anterior}' para '{evento.novo_status}'."
+            )
+        self._mensagens.setdefault(evento.pedido_id, []).append(msg)
+
+    def listar_mensagens(self, pedido_id: str) -> list[str]:
+        return list(self._mensagens.get(pedido_id, []))
 
 
 class NaoEncontrado(ValueError):
@@ -127,6 +197,7 @@ def criar_pedido(
     cliente_repo: LeitorRepositorio[Cliente],
     pedido_repo: EscritorRepositorio[Pedido],
     entregas: EscritorRepositorio[Entrega],
+    notificador: NotificadorEntrega | None = None,
 ) -> str:
     consultar_cliente(cliente_id, cliente_repo)
     if not isinstance(produtos, list) or not produtos:
@@ -134,7 +205,16 @@ def criar_pedido(
     itens = [_montar_item(produto) for produto in produtos]
     pedido = Pedido(cliente=cliente_id, itens=itens)
     pedido_repo.add(pedido)
-    entregas.add(Entrega(pedido_id=pedido.id))
+    entrega = Entrega(pedido_id=pedido.id)
+    entregas.add(entrega)
+    if notificador is not None:
+        notificador.notificar(
+            EventoStatusEntrega(
+                pedido_id=pedido.id,
+                status_anterior=None,
+                novo_status=entrega.status,
+            )
+        )
     return pedido.id
 
 
@@ -168,6 +248,7 @@ def atualizar_status_entrega(
     pedido_id: str,
     novo_status: str,
     entregas: Repositorio[Entrega],
+    notificador: NotificadorEntrega | None = None,
 ) -> str:
     entrega = entregas.get(pedido_id)
     if entrega is None:
@@ -177,6 +258,15 @@ def atualizar_status_entrega(
     status_normalizado = novo_status.strip()
     if status_normalizado not in STATUS_ENTREGA:
         raise ValueError(f"status inválido; use um de: {', '.join(STATUS_ENTREGA)}")
+    status_anterior = entrega.status
     entrega.atualizar_status(status_normalizado)
     entregas.add(entrega)
+    if notificador is not None and entrega.status != status_anterior:
+        notificador.notificar(
+            EventoStatusEntrega(
+                pedido_id=pedido_id,
+                status_anterior=status_anterior,
+                novo_status=entrega.status,
+            )
+        )
     return entrega.status
