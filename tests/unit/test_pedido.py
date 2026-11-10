@@ -5,6 +5,7 @@ import pytest
 from src.domain.entities.item_pedido import ItemPedido
 from src.domain.entities.pedido import Pedido
 from src.domain.entities.pedido_factory import PedidoFactory
+from src.domain.entities.politica_preco_pedido import DescontoPercentual, PrecoRegular
 from src.domain.entities.produto import Produto
 
 
@@ -70,6 +71,34 @@ def test_pedido_com_um_unico_item():
     pedido = PedidoFactory.criar(cliente="Ana", itens=itens)
 
     assert pytest.approx(pedido.total) == 25.0
+
+
+def test_pedido_calcula_total_com_politica_de_desconto():
+    pedido = PedidoFactory.criar(
+        cliente="Ana",
+        itens=[ItemPedido(Produto("Pizza", 40.0), quantidade=2)],
+    )
+
+    assert pedido.calcular_total(DescontoPercentual(10)) == pytest.approx(72.0)
+    assert pedido.total == pytest.approx(80.0)
+
+
+def test_pedido_calcula_total_com_politica_regular():
+    pedido = PedidoFactory.criar(
+        cliente="Ana",
+        itens=[ItemPedido(Produto("Pizza", 40.0), quantidade=2)],
+    )
+
+    assert pedido.calcular_total(PrecoRegular()) == pytest.approx(pedido.total)
+
+
+@pytest.mark.parametrize(
+    "percentual",
+    [-1, 100.1, float("inf"), float("nan"), 10**1000, True],
+)
+def test_desconto_percentual_invalido_deve_lancar_excecao(percentual):
+    with pytest.raises(ValueError, match="percentual de desconto deve estar entre 0 e 100"):
+        DescontoPercentual(percentual)
 
 
 @pytest.mark.parametrize("cliente_invalido", [None, "", "   "])

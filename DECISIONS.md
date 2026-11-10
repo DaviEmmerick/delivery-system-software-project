@@ -445,3 +445,31 @@ Arquivos Markdown:
 #### Uso de IA
 
 - Utilizei assistente de IA para auxiliar na análise das interfaces da camada de serviços perante o Princípio da Segregação de Interfaces (ISP), na estruturação dos protocolos segregados e na elaboração da documentação em `docs/solid.md` e neste autorrelato.
+
+## Parte 2 - checkpoint 3 (10/11/2026)
+
+### Davi França Emmerick de Souza
+
+#### O que implementei
+
+- Apliquei o padrão GoF Strategy ao cálculo do agregado `Pedido`, com uma política de preço regular e uma estratégia de desconto percentual.
+- Mantive `Pedido.total` e os chamadores existentes com cálculo regular; o método `Pedido.calcular_total()` permite solicitar outro cálculo sem alterar os itens nem o total padrão.
+- Adicionei testes unitários para as estratégias, a validação do percentual e a preservação do total padrão; documentei participantes, diagrama, alternativa e custo em `docs/gof.md`.
+
+#### Arquivos alterados
+
+- `src/domain/entities/politica_preco_pedido.py`
+- `src/domain/entities/pedido.py`
+- `src/domain/entities/__init__.py`
+- `src/domain/model.py`
+- `tests/unit/test_pedido.py`
+- `docs/gof.md`
+- `DECISIONS.md`
+
+#### Decisão de projeto
+
+- Usar Strategy para encapsular variações de cálculo de preço, mantendo o cálculo regular como padrão para preservar compatibilidade e não guardar uma campanha promocional como estado do pedido.
+
+#### Uso de IA
+
+- Utilizei o assistente de IA para testar as estratégias e redigir a documentação e este autorrelato.

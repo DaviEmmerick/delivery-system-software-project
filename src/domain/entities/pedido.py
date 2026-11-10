@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from uuid import uuid4
 
 from src.domain.entities.item_pedido import ItemPedido
+from src.domain.entities.politica_preco_pedido import PoliticaPrecoPedido, PrecoRegular
 
 
 class Pedido:
@@ -29,4 +30,7 @@ class Pedido:
 
     @property
     def total(self) -> float:
-        return sum(item.subtotal for item in self.itens)
+        return self.calcular_total(PrecoRegular())
+
+    def calcular_total(self, politica: PoliticaPrecoPedido) -> float:
+        return politica.calcular(self.itens)
