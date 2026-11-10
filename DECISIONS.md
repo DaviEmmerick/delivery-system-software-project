@@ -445,3 +445,35 @@ Arquivos Markdown:
 #### Uso de IA
 
 - Utilizei assistente de IA para auxiliar na análise das interfaces da camada de serviços perante o Princípio da Segregação de Interfaces (ISP), na estruturação dos protocolos segregados e na elaboração da documentação em `docs/solid.md` e neste autorrelato.
+
+## Parte 2 - checkpoint 3 (10/11/2026)
+
+### Victor Antunes dos Santos (@VictorAntunesCastro)
+
+#### O que implementei
+
+- Implementei o padrão GoF comportamental **Observer** na camada de serviço (`src/service_layer/services.py`) com o protocolo `ObservadorEntrega`, o sujeito `NotificadorEntrega`, o evento imutável `EventoStatusEntrega` e dois observadores concretos (`HistoricoEntregaObservador` e `NotificacaoClienteObservador`), integrando a publicação de eventos aos casos de uso `criar_pedido` e `atualizar_status_entrega`.
+- Conectei o `NotificadorEntrega` e o `HistoricoEntregaObservador` ao entrypoint Flask (`src/entrypoints/flask_app.py`), expondo a consulta da trilha de auditoria das transições no endpoint `GET /pedidos/<pedido_id>/entrega/historico` sem alterar o contrato das rotas existentes.
+- Adicionei testes unitários e E2E (`tests/unit/test_services.py` e `tests/e2e/test_api.py`) cobrindo a notificação de múltiplos observadores, cancelamento de inscrição (`desinscrever`), não emissão em transições inválidas ou idempotentes e consulta HTTP do histórico.
+- Documentei o padrão Observer, justificativa, alternativa considerada, participantes, diagrama de classes em Mermaid, testes e análise de custo em `docs/gof.md`.
+
+#### Arquivos alterados
+
+- `src/service_layer/services.py`
+- `src/entrypoints/flask_app.py`
+- `tests/unit/test_services.py`
+- `tests/e2e/test_api.py`
+- `docs/gof.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- Commits próprios deste Checkpoint 3 (Fase 2): implementação do padrão Observer na camada de serviço, endpoint e testes automatizados, além da documentação em `docs/gof.md` e atualização deste autorrelato em `DECISIONS.md`.
+
+#### Decisão de projeto
+
+- Utilizar o padrão **Observer** (`NotificadorEntrega` e `ObservadorEntrega`) injetado opcionalmente em `criar_pedido` e `atualizar_status_entrega` para desacoplar o registro de histórico de transições (`HistoricoEntregaObservador`) e as mensagens ao cliente (`NotificacaoClienteObservador`) da orquestração principal, garantindo que apenas mudanças efetivas e válidas de estado disparem eventos sem alterar a entidade `Entrega` nem quebrar chamadas existentes.
+
+#### Uso de IA
+
+- Utilizei o assistente de IA (Gemini) como apoio na análise dos padrões GoF, na organização da implementação do Observer, na elaboração dos testes e na criação do diagrama Mermaid para a documentação. O código e os testes foram revisados e validados localmente com `pytest`.
