@@ -354,6 +354,30 @@ Arquivos Markdown:
 
 - Utilizei assistente de IA para auxiliar na estruturação e revisão do ADR `docs/adr/0004-estrategia-de-testes-unitarios-e-qualidade-do-dominio.md` e na organização deste autorrelato, com base nas implementações de testes unitários e configurações de ambiente realizadas no projeto.
 
+### Leandro Machado Cardoso da Cunha
+
+#### O que implementei
+
+- Elaborei o ADR `docs/adr/0002-Regras-de-negocio.md`, registrando as decisões de validação e normalização no domínio, incluindo os tipos e valores aceitos pelas entidades, a validação de produtos associados a restaurantes e o tratamento de erros de entrada pela API.
+- Relacionei no ADR essas decisões às implementações de validação e regras de negócio que desenvolvi anteriormente, incluindo a normalização de dados e a resposta HTTP 400 para entradas inválidas.
+
+#### Arquivos alterados
+
+- `docs/adr/0002-Regras-de-negocio.md`
+
+#### Commits relevantes
+
+- Implementações documentadas da Fase 1: `cb7d31a`, `7875dc1`, `ca6d033` e `1213e36`.
+- `bfe3b9f` — `Feat:Adicionando adr 002`.
+
+#### Decisão de projeto
+
+- Manter as validações finais de tipos e regras de negócio nas entidades do domínio, deixando os serviços responsáveis pela validação do formato de entrada e a API pelo encaminhamento dos dados e pela conversão de `ValueError` em HTTP 400.
+
+#### Uso de IA
+
+- Utilizei assistente de IA como apoio para organizar este autorrelato com base no ADR e nos commits relacionados; as decisões descritas correspondem às implementações e à documentação do projeto e na geração de codigo.
+
 ## Parte 2 - checkpoint 2 (03/11/2026)
 
 ### Davi França Emmerick de Souza
@@ -446,7 +470,36 @@ Arquivos Markdown:
 
 - Utilizei assistente de IA para auxiliar na análise das interfaces da camada de serviços perante o Princípio da Segregação de Interfaces (ISP), na estruturação dos protocolos segregados e na elaboração da documentação em `docs/solid.md` e neste autorrelato.
 
-## Parte 2 - checkpoint 3 (10/11/2026)
+### Leandro Machado Cardoso da Cunha
+
+#### O que implementei
+
+- Corrigi o mapeamento do `RestauranteRepository` para persistir e recuperar os produtos associados ao restaurante, incluindo nome, preço e posição, evitando a perda desses dados no ciclo de gravação e leitura.
+- Adicionei um teste de integração que verifica se o restaurante e seus produtos são preservados no round-trip do repositório.
+- Documentei em `docs/solid.md` o problema de substituição entre implementações de repositório, a correção, a preservação do comportamento e seus custos; atualizei também a referência no `README.md`.
+
+#### Arquivos alterados
+
+- `src/adapters/orm.py`
+- `src/adapters/repository.py`
+- `tests/integration/test_repositories.py`
+- `docs/solid.md`
+- `README.md`
+
+#### Commits relevantes
+
+- `90bfefc` — `Feat:Refatorando segundo SOLID LSP`.
+- `488b9f0` — `DOCS:Tomadas de decisões e explicações do codigo`.
+
+#### Decisão de projeto
+
+- Fazer com que o repositório SQLAlchemy preserve o estado completo observável de `Restaurante`, incluindo seus produtos, para que possa substituir outras implementações sem mudar o comportamento esperado pelos consumidores.
+
+#### Uso de IA
+
+- Utilizei assistente de IA como apoio para organizar este autorrelato com base na implementação, no teste de integração e na documentação do princípio LSP e na geração de codigo.
+
+## Parte 3 - checkpoint 3 (10/11/2026)
 
 ### Victor Antunes dos Santos (@VictorAntunesCastro)
 
@@ -544,3 +597,37 @@ Arquivos Markdown:
 #### Uso de IA
 
 - Utilizei assistente de IA como ferramenta de apoio para análise dos padrões GoF da equipe, estruturação do diagrama de classes em Mermaid e auxílio na redação deste autorrelato e da documentação técnica em `docs/gof.md`.
+
+### Leandro Machado Cardoso da Cunha
+
+#### O que implementei
+
+- Implementei o padrão GoF comportamental **State** no ciclo de vida de `Entrega`, representando os estados pendente, em trânsito, entregue e cancelada e definindo as transições permitidas para cada estado.
+- Fiz com que a entidade `Entrega` valide as transições e rejeite mudanças inválidas, mantendo idempotentes as solicitações do estado atual. Ajustei o fluxo em `Pedido` e na camada de serviços para delegar a mudança à entidade.
+- Adicionei testes unitários para transições válidas e inválidas e atualizei testes dos serviços e da API para verificar o fluxo.
+- Documentei o padrão, seus participantes, transições e testes em `docs/gof.md`.
+
+#### Arquivos alterados
+
+- `src/domain/entities/entrega.py`
+- `src/domain/entities/pedido.py`
+- `src/service_layer/services.py`
+- `tests/unit/test_entrega.py`
+- `tests/unit/test_services.py`
+- `tests/e2e/test_api.py`
+- `docs/gof.md`
+
+#### Commits relevantes
+
+- `9598c9c` — `Feat:Implementa padrão State no ciclo de vida de Entrega`.
+- `d615d4b` — `Refactor: Delega transições de status à entidade Entrega`.
+- `5cc6787` — `Testes: Cobre transições válidas e inválidas de Entrega e atualiza fluxo da entrega para respeitar transições`.
+- `6dca977` — `Docs: Documenta padrão State do agregado Entrega`.
+
+#### Decisão de projeto
+
+- Centralizar na entidade `Entrega` as regras de transição dependentes do estado atual, deixando o serviço responsável por localizar e persistir a entrega e impedindo transições inválidas no domínio.
+
+#### Uso de IA
+
+- Utilizei assistente de IA como apoio para organizar este autorrelato com base nos commits, nos testes e na documentação do padrão State e na geração de codigo.
