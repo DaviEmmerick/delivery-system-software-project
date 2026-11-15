@@ -631,3 +631,31 @@ Arquivos Markdown:
 #### Uso de IA
 
 - Utilizei assistente de IA como apoio para organizar este autorrelato com base nos commits, nos testes e na documentação do padrão State e na geração de codigo.
+
+
+## Parte 4 - checkpoint 4 (17/11/2026)
+
+
+### O que implementei 
+
+Basicamente foquei no arquivo de frameworks e busquei entender de forma geral o projeto, inclusive as partes que não foram desenvolvidas por mim. Com base nisso expliquei os trade-offs, decisões arquiteturais e os demais pontos do trabalho.
+
+### Por que
+
+Explicar o código como conceito é super importante atualmente, visto que boa parte do código passou a ser desenvolvida por LLMs, é esperado que o desenvolvedor saiba desenhar soluções, entender quais são as melhores saídas e aplicar isso utilizando uma metodologia AI-Based. 
+
+#### Arquivos alterados
+
+- `docs/frameworks.md`
+
+#### Commits relevantes
+
+- `4e9cff47e` [Docs] Frameworks
+
+#### Decisão de projeto
+
+Acho que nenhuma nesse caso, foi basicamente uma tarefa de análise mesmo
+
+#### Uso de IA
+
+Não utilizei IA nessa seção final do trabalho
