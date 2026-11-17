@@ -376,7 +376,7 @@ Arquivos Markdown:
 
 #### Uso de IA
 
-- Utilizei assistente de IA como apoio para organizar este autorrelato com base no ADR e nos commits relacionados; as decisões descritas correspondem às implementações e à documentação do projeto e na geração de codigo.
+- Utilizei assistente de IA para organizar a descrição do ADR e relacionar as decisões nele registradas aos commits e às implementações de validação já existentes. O apoio foi de análise e redação do autorrelato; as decisões e evidências foram conferidas com o ADR e o histórico do projeto.
 
 ## Parte 2 - checkpoint 2 (03/11/2026)
 
@@ -630,7 +630,7 @@ Arquivos Markdown:
 
 #### Uso de IA
 
-- Utilizei assistente de IA como apoio para organizar este autorrelato com base nos commits, nos testes e na documentação do padrão State e na geração de codigo.
+- Utilizei assistente de IA como apoio para estruturar propostas de implementação e de testes para o padrão State, além de organizar a documentação e este autorrelato. Usei os commits, os testes e o comportamento esperado das transições de `Entrega` como referência para revisar as propostas e integrá-las ao código do projeto.
 
 
 ## Parte 4 - checkpoint 4 (17/11/2026)
@@ -659,3 +659,28 @@ Acho que nenhuma nesse caso, foi basicamente uma tarefa de análise mesmo
 #### Uso de IA
 
 Não utilizei IA nessa seção final do trabalho
+
+## Leandro Machado Cardoso da Cunha
+#### O que fiz
+
+- Colaborei na elaboração de `docs/retrospectiva.md`, especialmente na comparação entre a arquitetura em camadas atual e a alternativa de Transaction Script com acesso direto ao SQLAlchemy, proposta no Checkpoint 1.
+- Relacionei a comparação às experiências da Fase 2: o isolamento ajudou a testar regras sem HTTP e banco, enquanto a alternativa poderia simplificar o CRUD e facilitar a persistência transacional da entrega.
+- Registrei também os limites da comparação: não implementamos o experimento opcional, então as conclusões são argumentativas e baseadas nas evidências do repositório, não em medições lado a lado.
+
+#### Arquivos relacionados
+
+- `docs/retrospectiva.md`
+- `DECISIONS.md`
+
+#### Decisão de projeto
+
+- Na comparação, considerei mais adequado manter as camadas e os repositórios, com ajustes híbridos, porque os testes isolados e as refatorações da Fase 2 trouxeram benefícios concretos, embora a persistência do estado da entrega continue sendo uma lacuna importante.
+
+#### Uso de IA
+
+- Usei assistente de IA para apoiar a organização e a redação desta subseção e da comparação da retrospectiva. As afirmações foram relacionadas ao conteúdo de `docs/arquitetura.md`, `docs/retrospectiva.md` e ao histórico do projeto.O uso principal foi a reformulação de textos e centralização de ideias.
+
+#### Reflexão final — Fase 2
+Na Fase 2, aprendi que separar domínio, serviços e infraestrutura ajuda a mudar regras sem espalhar dependências por todo o sistema, mas essa organização também tem custos. Nos meus trabalhos com a esteira de testes, as validações das entidades, a correção do mapeamento de `RestauranteRepository` e o padrão State de `Entrega`, precisei pensar tanto no comportamento esperado quanto em como comprová-lo por testes. Os commits da CI (`41cd01f` e ajustes), das regras de negócio (`cb7d31a`, `7875dc1`, `ca6d033` e `1213e36`), do LSP (`90bfefc`) e do State (`9598c9c`, `d615d4b`, `5cc6787` e `6dca977`) mostram essa evolução: primeiro garantir validações e automação, depois cuidar da substituição dos repositórios e das transições válidas do domínio.
+
+Ao comparar a arquitetura atual com Transaction Script e acesso direto ao SQLAlchemy, entendi melhor o trade-off entre simplicidade e testabilidade. A alternativa poderia reduzir indireção em operações CRUD e facilitar uma transação única para pedido e entrega, mas deixaria regras mais próximas do banco e da API. Eu manteria as camadas, porém persistiria o estado da entrega desde o início e evitaria abstrações onde não agregam valor. Se recomeçasse, também registraria as decisões e a autoria de cada contribuição junto com os commits, para facilitar a revisão final.
