@@ -57,3 +57,28 @@ Se o grupo tivesse optado por **Django** (com Django ORM e Django REST Framework
    Atualmente, os testes unitários em `tests/unit/` executam em milissegundos sem carregar ORM ou banco de dados. No Django, testar regras acopladas a `models.Model` normalmente exige herdar de `django.test.TestCase`, inicializar o registro de aplicações (*app registry*) e criar bancos de teste com migrações, aumentando o tempo de execução e acoplando a suíte ao ciclo de vida do framework.
 4. **Trade-off de produtividade vs. controle arquitetural:**
    O Django entregaria recursos prontos fora da caixa — como painel administrativo, sistema de migrações (`makemigrations`), autenticação/permissões e serialização declarativa — reduzindo o código de infraestrutura inicial. Em contrapartida, tornaria mais difícil e custoso exercitar explicitamente a inversão de dependências, o isolamento do domínio e a substituição limpa de adaptadores propostas como objetivos desta disciplina.
+
+
+---
+
+## 5. Extensibilidade, Inversão de Controle em Testes e a Fronteira do Domínio
+
+### Injeção de dependências e Inversão de Controle nos testes (pytest vs. Mocks de Framework)
+
+O mecanismo de **Inversão de Controle** do `pytest` não se limita à descoberta automática de testes; ele é central no gerenciamento do ciclo de vida das dependências através de *fixtures* (`tests/conftest.py`). Em vez de o teste instanciar manualmente conexões de banco de dados, clientes HTTP e repositórios em blocos repetitivos de *setup/teardown*, o `pytest` inspeciona os argumentos declarados em cada função de teste e injeta os colaboradores configurados sob demanda (com escopo controlado por função ou sessão).
+
+Além disso, a separação entre framework e domínio permitiu uma estratégia de testes baseada em **dublês estruturais puros** em vez de *mocks dinâmicos de framework*:
+- **Dublês tipados baseados em contratos:** Na camada de serviços e nos testes unitários, utilizamos implementações em memória simples (`FakeRepository`, `EntregaMemoryRepository`) e objetos do próprio domínio (`ComponenteItem`, `Item`, `Combo`, `Produto`). Como esses objetos cumprem os protocolos estáticos do domínio (`Protocol` da PEP 544), o `pytest` os executa com custo de processamento quase nulo.
+- **Evitando a fragilidade dos mocks de framework:** Frameworks de teste que dependem fortemente de `unittest.mock.MagicMock` ou *monkeypatching* de bibliotecas externas (como simular retornos de `session.query()` do SQLAlchemy ou de `requests.post()`) tendem a criar testes frágeis que validam detalhes de implementação da biblioteca em vez das regras do negócio. Ao manter o domínio sem dependências de framework, os testes unitários (`tests/unit/`) exercitam o comportamento real dos objetos sem a necessidade de simular estruturas internas de terceiros.
+
+### A fronteira de serialização e sanitização entre Flask e o Domínio
+
+A borda de contato entre o framework web (**Flask**) e o sistema ocorre exclusivamente na camada de entrypoint (`src/entrypoints/flask_app.py`):
+1. **Barreira contra tipos primitivos do framework:** O Flask recebe as requisições HTTP e entrega estruturas genéricas de dicionários e listas via `request.get_json()`. Essas estruturas não ultrapassam a fronteira da camada de aplicação sem validação. A camada de serviço traduz esses dados primitivos em objetos e invariantes do domínio (por exemplo, validando textos obrigatórios, instanciando `Produto`, `ItemPedido` ou calculando totais de `Combo`).
+2. **Proteção contra vazamento de exceções HTTP:** O domínio nunca lança exceções do Flask (como `werkzeug.exceptions.NotFound` ou `abort(404)`). Em vez disso, o domínio emite exceções semânticas da linguagem (`ValueError`), e a camada de serviço sinaliza erros de caso de uso (`NaoEncontrado`, `Conflito`). É o Flask que, por meio dos seus *error handlers* registrados (`@app.errorhandler`), intercepta essas exceções de domínio/serviço e as traduz nos respectivos códigos de status HTTP (`400`, `404`, `409`). Esse isolamento garante que o domínio possa ser consumido por outros pontos de entrada (como filas de mensageria, rotinas agendadas ou CLIs) sem qualquer modificação.
+
+### Padrões de Projeto do Domínio vs. Recursos Nativos dos Frameworks
+
+Durante a Fase 2, o grupo implementou padrões GoF como **Strategy**, **State**, **Composite** e **Observer** diretamente no código-fonte da aplicação. Em projetos que utilizam frameworks maduros, existe frequentemente a tentação de substituir padrões de projeto de domínio por facilidades nativas oferecidas pelo ecossistema do framework:
+- **Exemplo 1 (Observer vs. SQLAlchemy/Flask Signals):** Poderíamos ter utilizado o sistema de eventos do SQLAlchemy (`event.listen`) ou os *signals* do Blinker/Flask para disparar notificações quando o status de uma entrega mudasse. No entanto, isso acoplaria a regra de negócio da entrega ao ciclo de vida do ORM ou do servidor web. Ao implementar `NotificadorEntrega` e `ObservadorEntrega` como contratos independentes na camada de serviço, a lógica de notificação e auditoria pode ser executada em testes unitários sem levantar instâncias de banco ou servidor HTTP.
+- **Exemplo 2 (Composite e Strategy vs. Campos Calculados do ORM):** Em vez de usar propriedades híbridas (`hybrid_property`) do SQLAlchemy ou condicionais em modelos de banco para calcular preços de combos e descontos, o cálculo reside inteiramente em objetos do domínio (`Combo`, `Item`, `PoliticaPrecoPedido`). Isso assegura que regras de precificação e montagem de cardápio existam como lógica pura de negócio, testável de forma determinística e independente do mecanismo de persistência.

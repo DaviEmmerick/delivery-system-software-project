@@ -684,3 +684,44 @@ Não utilizei IA nessa seção final do trabalho
 Na Fase 2, aprendi que separar domínio, serviços e infraestrutura ajuda a mudar regras sem espalhar dependências por todo o sistema, mas essa organização também tem custos. Nos meus trabalhos com a esteira de testes, as validações das entidades, a correção do mapeamento de `RestauranteRepository` e o padrão State de `Entrega`, precisei pensar tanto no comportamento esperado quanto em como comprová-lo por testes. Os commits da CI (`41cd01f` e ajustes), das regras de negócio (`cb7d31a`, `7875dc1`, `ca6d033` e `1213e36`), do LSP (`90bfefc`) e do State (`9598c9c`, `d615d4b`, `5cc6787` e `6dca977`) mostram essa evolução: primeiro garantir validações e automação, depois cuidar da substituição dos repositórios e das transições válidas do domínio.
 
 Ao comparar a arquitetura atual com Transaction Script e acesso direto ao SQLAlchemy, entendi melhor o trade-off entre simplicidade e testabilidade. A alternativa poderia reduzir indireção em operações CRUD e facilitar uma transação única para pedido e entrega, mas deixaria regras mais próximas do banco e da API. Eu manteria as camadas, porém persistiria o estado da entrega desde o início e evitaria abstrações onde não agregam valor. Se recomeçasse, também registraria as decisões e a autoria de cada contribuição junto com os commits, para facilitar a revisão final.
+
+
+## João Gabriel de Azevedo
+
+#### O que fiz
+
+- Contribuí com a análise e documentação de frameworks em `docs/frameworks.md` (Seção 5), detalhando:
+  - O funcionamento prático da Inversão de Controle e da injeção de dependências no `pytest` por meio de *fixtures*, contrastando a utilização de dublês estruturais puros tipados via `Protocol` com a fragilidade de mocks dinâmicos de frameworks.
+  - A fronteira de serialização e sanitização entre o Flask e as entidades de domínio (`src/entrypoints/flask_app.py`), garantindo que dicionários e estruturas primitivas não ultrapassem os limites da aplicação e que exceções de domínio/serviço sejam mapeadas estritamente em códigos HTTP pelos *error handlers*.
+  - A distinção arquitetural entre a aplicação de padrões GoF no domínio (Composite, Strategy, State, Observer) e a dependência de recursos mágicos/nativos de frameworks (como signals de Flask ou hooks de ORM), preservando a portabilidade e testabilidade independente do núcleo de negócio.
+
+#### Por que
+
+- Para fundamentar tecnicamente a análise crítica exigida no Checkpoint 4, comprovando como a Inversão de Controle dos frameworks deve ser aproveitada nas camadas externas (testes, web e banco) sem comprometer o isolamento das regras de negócio em Plain Old Python Objects (POPOs).
+
+#### Arquivos relacionados
+
+- `docs/frameworks.md`
+- `DECISIONS.md`
+
+#### Decisão de projeto
+
+- Manter uma barreira arquitetural unidirecional rígida entre frameworks e o domínio: frameworks de infraestrutura e de teste dependem das interfaces do domínio, enquanto o domínio permanece 100% puro e agnóstico a qualquer dependência externa ou mecanismo de reflexão/sinais de bibliotecas.
+
+#### Uso de IA
+
+- Utilizei assistente de IA como ferramenta de suporte para organização das ideias conceituais, estruturação dos tópicos sobre Inversão de Controle e revisão textual da documentação técnica e deste autorrelato, sem utilização para geração de código.
+
+#### Reflexão final — Fase 2
+
+Na Fase 2 do projeto, vivenciei na prática como decisões de arquitetura e design de software impactam diretamente a manutenibilidade, a evolução e a testabilidade de uma aplicação real. Ao longo dos checkpoints, pude conectar a teoria da disciplina aos desafios concretos do desenvolvimento em equipe.
+
+O primeiro grande aprendizado veio com a aplicação dos princípios SOLID, especialmente o Princípio da Segregação de Interfaces (ISP). Refatorar os contratos de repositório em interfaces coesas de leitura, listagem e escrita me mostrou que abstrações enxutas facilitam a criação de dublês de teste pontuais, dispensando mocks complexos e tornando os testes unitários mais limpos e expressivos.
+
+Em seguida, a implementação do padrão GoF Composite no modelo de domínio reforçou o valor de tratar objetos individuais e composições hierárquicas de forma polimórfica e uniforme. Construir a árvore recursiva de produtos e combos com descontos parciais, mantendo o cliente agnóstico quanto à estrutura interna, eliminou código procedural e condicionais de verificação de tipo.
+
+Por fim, a análise crítica dos frameworks (Flask, SQLAlchemy e pytest) consolidou minha compreensão sobre Inversão de Controle e isolamento do domínio. Compreendi que frameworks devem atuar exclusivamente nas bordas do sistema como mecanismos de entrega e persistência, e nunca como detentores das regras de negócio. Manter as entidades como POPOs puros permitiu que nossa suíte de testes unitários executasse em milissegundos, garantindo feedback imediato e segurança contra regressões. Concluo esta fase entendendo os trade-offs entre simplicidade e desacoplamento, valorizando a arquitetura limpa como viabilizadora de qualidade contínua no ciclo de vida do software.
+
+---
+
+**Tag:** `fase2-checkpoint-4`
