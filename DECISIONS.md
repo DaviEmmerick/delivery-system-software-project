@@ -737,7 +737,7 @@ Por fim, a análise crítica dos frameworks (Flask, SQLAlchemy e pytest) consoli
 #### Commits relevantes
 
 - `810a801` — `[Docs] Adiciona retrospectiva da arquitetura da Fase 2` (16/11/2026)
-- Commit final de atualização deste autorrelato e reflexão individual em `DECISIONS.md` (17/11/2026)
+- `90825a3` — `[Docs] Adiciona autorrelato e reflexao final de Victor Antunes` (17/11/2026)
 
 #### Decisão de projeto
 
@@ -745,7 +745,7 @@ Por fim, a análise crítica dos frameworks (Flask, SQLAlchemy e pytest) consoli
 
 #### Uso de IA
 
-- Utilizei o assistente de IA (Antigravity / Gemini) para levantar estatísticas do histórico de commits (`git log` e `git diff --stat`), conferir o tempo de execução das suítes no `pytest` e estruturar a redação de `docs/retrospectiva.md` e deste autorrelato/reflexão. Todo o conteúdo foi revisado e validado por mim contra o código e os testes do repositório.
+- Utilizei o assistente de IA (Gemini) para levantar estatísticas do histórico de commits (`git log` e `git diff --stat`), conferir o tempo de execução das suítes no `pytest` e revisar a redação de `docs/retrospectiva.md` e deste autorrelato. Todo o conteúdo foi validado por mim contra o código e os testes do repositório.
 
 #### Reflexão final — Fase 2
 
