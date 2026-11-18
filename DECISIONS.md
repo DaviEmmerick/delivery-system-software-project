@@ -635,6 +635,7 @@ Arquivos Markdown:
 
 ## Parte 4 - checkpoint 4 (17/11/2026)
 
+## Davi França Emmerick de Souza
 
 ### O que implementei 
 
@@ -659,6 +660,10 @@ Acho que nenhuma nesse caso, foi basicamente uma tarefa de análise mesmo
 #### Uso de IA
 
 Não utilizei IA nessa seção final do trabalho
+
+### Reflexão
+
+Durante o desenvolvimento desta etapa, pude exercitar uma visão mais ampla do projeto, indo além das funcionalidades que implementei diretamente. A análise dos frameworks e das decisões arquiteturais me permitiu compreender melhor os trade-offs envolvidos, avaliar diferentes abordagens e desenvolver a capacidade de justificar tecnicamente as soluções adotadas. Considero esse exercício especialmente importante no cenário atual de desenvolvimento de software, em que o uso de LLMs exige que o desenvolvedor não apenas produza código, mas também saiba interpretar, validar, questionar e orientar sua construção. Acredito que essa atividade contribuiu para fortalecer minha capacidade de análise crítica e de compreensão arquitetural, competências fundamentais para trabalhar com metodologias de desenvolvimento AI-Based.
 
 ## Leandro Machado Cardoso da Cunha
 #### O que fiz
