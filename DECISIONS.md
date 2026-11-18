@@ -722,6 +722,37 @@ Em seguida, a implementação do padrão GoF Composite no modelo de domínio ref
 
 Por fim, a análise crítica dos frameworks (Flask, SQLAlchemy e pytest) consolidou minha compreensão sobre Inversão de Controle e isolamento do domínio. Compreendi que frameworks devem atuar exclusivamente nas bordas do sistema como mecanismos de entrega e persistência, e nunca como detentores das regras de negócio. Manter as entidades como POPOs puros permitiu que nossa suíte de testes unitários executasse em milissegundos, garantindo feedback imediato e segurança contra regressões. Concluo esta fase entendendo os trade-offs entre simplicidade e desacoplamento, valorizando a arquitetura limpa como viabilizadora de qualidade contínua no ciclo de vida do software.
 
+### Victor Antunes dos Santos (@VictorAntunesCastro)
+
+#### O que implementei
+
+- Elaborei o documento `docs/retrospectiva.md` (commit `810a801`), consolidando a avaliação crítica da arquitetura em camadas ao final da Fase 2: confrontei as previsões de integridade, testabilidade e modificabilidade do Checkpoint 1 com os resultados práticos, levantei métricas reais do repositório (evolução de 148 para 201 testes, comparativo de execução entre `tests/unit/` em `~0,18 s` e `tests/e2e/` em `~0,33 s`, e crescimento de `src/service_layer/services.py` de 117 para 272 linhas) e fundamentei a decisão final de manter a arquitetura em camadas com ajustes híbridos.
+- Revisei a integração entre o entrypoint Flask (`src/entrypoints/flask_app.py`), a camada de serviços (`src/service_layer/services.py`) e a análise de inversão de controle e padrões internos documentada em `docs/frameworks.md`.
+
+#### Arquivos alterados
+
+- `docs/retrospectiva.md`
+- `DECISIONS.md`
+
+#### Commits relevantes
+
+- `810a801` — `[Docs] Adiciona retrospectiva da arquitetura da Fase 2` (16/11/2026)
+- Commit final de atualização deste autorrelato e reflexão individual em `DECISIONS.md` (17/11/2026)
+
+#### Decisão de projeto
+
+- Adotar como conclusão arquitetural em `docs/retrospectiva.md` uma abordagem híbrida: preservar a separação entre domínio, camada de serviços e repositórios nos fluxos com regras de negócio e máquinas de estado, mas reconhecer que operações puramente CRUD poderiam usar acesso mais direto e que o estado de `Entrega` e seu histórico deveriam ser persistidos em banco relacional desde o início.
+
+#### Uso de IA
+
+- Utilizei o assistente de IA (Antigravity / Gemini) para levantar estatísticas do histórico de commits (`git log` e `git diff --stat`), conferir o tempo de execução das suítes no `pytest` e estruturar a redação de `docs/retrospectiva.md` e deste autorrelato/reflexão. Todo o conteúdo foi revisado e validado por mim contra o código e os testes do repositório.
+
+#### Reflexão final — Fase 2
+
+Ao longo da Fase 2, trabalhar diretamente na camada de serviço (`src/service_layer/services.py`), no entrypoint Flask (`src/entrypoints/flask_app.py`) e nas suítes `tests/unit/test_services.py` e `tests/e2e/test_api.py` mudou minha visão sobre o equilíbrio entre desacoplamento e simplicidade. Na Fase 1 e no ADR 0003 (`0753ce8`), injetar repositórios por parâmetro e isolar o Flask em `create_app()` com `@app.errorhandler` parecia apenas uma convenção, mas foi justamente essa fronteira que permitiu aplicar o Princípio da Inversão de Dependência (`46cdb65` e `5438f36`, criando o protocolo `Repositorio[T]` e `EntregaMemoryRepository`) e o padrão GoF Observer (`3866298`, com `NotificadorEntrega` e `HistoricoEntregaObservador`) sem quebrar nenhuma rota HTTP existente e mantendo os testes unitários executando em cerca de um milissegundo por teste com `FakeRepository`.
+
+Por outro lado, escrever `docs/retrospectiva.md` (`810a801`) deixou claro que toda abstração cobra um preço real: `services.py` mais que dobrou de tamanho (de 117 para 272 linhas), assinaturas como `criar_pedido` passaram a exigir seis parâmetros e manter `Entrega` e o histórico de eventos apenas em memória criou uma lacuna de persistência frente aos pedidos salvos no SQLite. Se eu começasse o projeto novamente, manteria a Service Layer desacoplada do Flask e do SQLAlchemy para orquestrar regras e eventos, mas implementaria um `EntregaRepository` em SQLite desde o primeiro checkpoint, agruparia dependências em um contexto de unidade de trabalho para enxugar as assinaturas e conectaria todos os padrões do domínio até os endpoints da API.
+
 ---
 
-**Tag:** `fase2-checkpoint-4`
+**Tag:** `fase2-entrega`
